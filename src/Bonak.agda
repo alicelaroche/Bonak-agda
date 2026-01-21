@@ -89,77 +89,77 @@ coh-frame : ∀ n p q r δ δ' δ''
               (restr-frame (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hp) (⇑ Hq) (s≤s δ'≤δ) ε D d)
 
 coh-layer : ∀ n p q r δ δ' δ''
-          → .(Hp : 1+ δ + p ≡ n) .(Hq : δ' + p ≡ q) .(Hr : δ'' + p ≡ r)
+          → .(Hn : 1+ δ + p ≡ n) .(Hq : δ' + p ≡ q) .(Hr : δ'' + p ≡ r)
           → .(δ''≤δ' : δ'' ≤ δ') .(δ'≤δ : δ' ≤ δ)
           → (ε ω : arity)
           → (D : νSet-< (2+ n))
-          → (d : frame (2+ n) p (3+ δ) (⇑ ⇑ Hp) D .Dom)
-          → (l : layer (2+ n) p (2+ δ) (⇑ ⇑ Hp) D d .Dom)
+          → (d : frame (2+ n) p (3+ δ) (⇑ ⇑ Hn) D .Dom)
+          → (l : layer (2+ n) p (2+ δ) (⇑ ⇑ Hn) D d .Dom)
           → subst (λ - → layer n p δ _ (D .₁ .₁) - .Dom)
-              (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') Hp (⇑ Hq) (⇑ Hr) (s≤s δ''≤δ') (s≤s δ'≤δ) ε ω D d)
-              (restr-layer n p q δ δ' Hp Hq δ'≤δ ε (D .₁)
-                (restr-frame (1+ n) p (1+ r) (2+ δ) (1+ δ'') (⇑ Hp) (⇑ Hr) (↑ s≤s (δ''≤δ' ↕ δ'≤δ)) ω D d)
-                (restr-layer (1+ n) p r (1+ δ) δ'' (⇑ Hp) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D d l))
-          ≡ restr-layer n p r δ δ'' Hp Hr (δ''≤δ' ↕ δ'≤δ) ω (D .₁)
-              (restr-frame (1+ n) p (2+ q) (2+ δ) (2+ δ') (⇑ Hp) (⇑ ⇑ Hq) (s≤s (s≤s δ'≤δ)) ε D d)
-              (restr-layer (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hp) (⇑ Hq) (s≤s δ'≤δ) ε D d l)
+              (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') Hn (⇑ Hq) (⇑ Hr) (s≤s δ''≤δ') (s≤s δ'≤δ) ε ω D d)
+              (restr-layer n p q δ δ' Hn Hq δ'≤δ ε (D .₁)
+                (restr-frame (1+ n) p (1+ r) (2+ δ) (1+ δ'') (⇑ Hn) (⇑ Hr) (↑ s≤s (δ''≤δ' ↕ δ'≤δ)) ω D d)
+                (restr-layer (1+ n) p r (1+ δ) δ'' (⇑ Hn) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D d l))
+          ≡ restr-layer n p r δ δ'' Hn Hr (δ''≤δ' ↕ δ'≤δ) ω (D .₁)
+              (restr-frame (1+ n) p (2+ q) (2+ δ) (2+ δ') (⇑ Hn) (⇑ ⇑ Hq) (s≤s (s≤s δ'≤δ)) ε D d)
+              (restr-layer (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hn) (⇑ Hq) (s≤s δ'≤δ) ε D d l)
            
 coh-painting : ∀ n p q r δ δ' δ''
-          → .(Hp : δ + p ≡ n) .(Hq : δ' + p ≡ q) .(Hr : δ'' + p ≡ r)
+          → .(Hn : δ + p ≡ n) .(Hq : δ' + p ≡ q) .(Hr : δ'' + p ≡ r)
           → .(δ''≤δ' : δ'' ≤ δ') .(δ'≤δ : δ' ≤ δ)
           → (ε ω : arity)
           → (D : νSet-< (2+ n)) (E : νSet-= (2+ n) D)  
-          → (d : frame (2+ n) p (2+ δ) (⇑ ⇑ Hp) D .Dom)
-          → (c : painting (2+ n) p (2+ δ) (⇑ ⇑ Hp) D E d .Dom)
+          → (d : frame (2+ n) p (2+ δ) (⇑ ⇑ Hn) D .Dom)
+          → (c : painting (2+ n) p (2+ δ) (⇑ ⇑ Hn) D E d .Dom)
           → subst (λ - → painting n p δ _ (D .₁ .₁) (D .₁ .₂) - .Dom)
-              (coh-frame n p q r δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D d)
-              (restr-painting n p q δ δ' Hp Hq δ'≤δ ε (D .₁) (D .₂)
-                (restr-frame (1+ n) p r (1+ δ) δ'' (⇑ Hp) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D d)
-                (restr-painting (1+ n) p r (1+ δ) δ'' (⇑ Hp) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D E d c))
-          ≡ restr-painting n p r δ δ'' Hp Hr (δ''≤δ' ↕ δ'≤δ) ω (D .₁) (D .₂)
-              (restr-frame (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hp) (⇑ Hq) (s≤s δ'≤δ) ε D d)
-              (restr-painting (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hp) (⇑ Hq) (s≤s δ'≤δ) ε D E d c)
+              (coh-frame n p q r δ δ' δ'' Hn Hq Hr δ''≤δ' δ'≤δ ε ω D d)
+              (restr-painting n p q δ δ' Hn Hq δ'≤δ ε (D .₁) (D .₂)
+                (restr-frame (1+ n) p r (1+ δ) δ'' (⇑ Hn) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D d)
+                (restr-painting (1+ n) p r (1+ δ) δ'' (⇑ Hn) Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D E d c))
+          ≡ restr-painting n p r δ δ'' Hn Hr (δ''≤δ' ↕ δ'≤δ) ω (D .₁) (D .₂)
+              (restr-frame (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hn) (⇑ Hq) (s≤s δ'≤δ) ε D d)
+              (restr-painting (1+ n) p (1+ q) (1+ δ) (1+ δ') (⇑ Hn) (⇑ Hq) (s≤s δ'≤δ) ε D E d c)
 
 νSet-= n D = frame n n 0 refl D .Dom → HSet 
 
-frame n zero   δ Hp D = HUnit
-frame n (1+ p) δ Hp D = HΣ[ d ∈ frame n p (1+ δ) (← Hp) D ] layer n p δ (← Hp) D d
+frame n zero   δ Hn D = HUnit
+frame n (1+ p) δ Hn D = HΣ[ d ∈ frame n p (1+ δ) (← Hn) D ] layer n p δ (← Hn) D d
 
-layer (1+ n) p δ Hp D d =
- HΠ[ ε ∈ arity ] painting n p δ (⇓ Hp) (D .₁) (D .₂) (restr-frame n p p δ 0 (⇓ Hp) refl 0≤n ε D d)
+layer (1+ n) p δ Hn D d =
+ HΠ[ ε ∈ arity ] painting n p δ (⇓ Hn) (D .₁) (D .₂) (restr-frame n p p δ 0 (⇓ Hn) refl 0≤n ε D d)
 
-painting n p zero Hp D E d with recover-nat-eq Hp
+painting n p zero Hn D E d with recover-nat-eq Hn
 ... | refl = E d
-painting n p (1+ δ) Hp D E d = HΣ[ l ∈ layer n p δ Hp D d ] painting n (1+ p) δ (⇒ Hp) D E (d , l)
+painting n p (1+ δ) Hn D E d = HΣ[ l ∈ layer n p δ Hn D d ] painting n (1+ p) δ (⇒ Hn) D E (d , l)
 
-restr-frame n zero   q δ δ' Hp Hq δ'≤δ ε D d = tt
-restr-frame n (1+ p) zero δ zero Hp ()
-restr-frame n (1+ p) zero δ (1+ δ') Hp ()
-restr-frame n (1+ p) (1+ q) δ δ' Hp Hq δ'≤δ ε D (d , l) =
-  restr-frame n p (1+ q) (1+ δ) (1+ δ') (← Hp) (← Hq) (s≤s δ'≤δ) ε D d ,
-  restr-layer n p q δ δ' (← Hp) (⇓ ← Hq) δ'≤δ ε D d l
+restr-frame n zero   q δ δ' Hn Hq δ'≤δ ε D d = tt
+restr-frame n (1+ p) zero δ zero Hn ()
+restr-frame n (1+ p) zero δ (1+ δ') Hn ()
+restr-frame n (1+ p) (1+ q) δ δ' Hn Hq δ'≤δ ε D (d , l) =
+  restr-frame n p (1+ q) (1+ δ) (1+ δ') (← Hn) (← Hq) (s≤s δ'≤δ) ε D d ,
+  restr-layer n p q δ δ' (← Hn) (⇓ ← Hq) δ'≤δ ε D d l
 
-restr-layer (1+ n) p q δ δ' Hp Hq δ'≤δ ε (D , E) d l ω =
-    subst (λ - → painting n p δ (⇓ Hp) (D .₁) (D .₂) - .Dom)
-      (coh-frame n p q p δ δ' 0 (⇓ Hp) Hq refl 0≤n δ'≤δ ε ω (D , E) d)
-      (restr-painting n p q δ δ' (⇓ Hp) Hq δ'≤δ ε D E
-         (restr-frame (1+ n) p p (1+ δ) 0 Hp refl 0≤n ω (D , E) d) (l ω))  
+restr-layer (1+ n) p q δ δ' Hn Hq δ'≤δ ε (D , E) d l ω =
+    subst (λ - → painting n p δ (⇓ Hn) (D .₁) (D .₂) - .Dom)
+      (coh-frame n p q p δ δ' 0 (⇓ Hn) Hq refl 0≤n δ'≤δ ε ω (D , E) d)
+      (restr-painting n p q δ δ' (⇓ Hn) Hq δ'≤δ ε D E
+         (restr-frame (1+ n) p p (1+ δ) 0 Hn refl 0≤n ω (D , E) d) (l ω))  
 
-restr-painting n p q δ 0 Hp Hq δ'≤δ ε D E d (l , c) with recover-nat-eq Hq
+restr-painting n p q δ 0 Hn Hq δ'≤δ ε D E d (l , c) with recover-nat-eq Hq
 ... | refl = l ε
-restr-painting n p (1+ q) (1+ δ) (1+ δ') Hp Hq δ'≤δ ε D E d (l , c) =
-  restr-layer n p q δ δ' Hp (⇓ Hq) (↓↓ δ'≤δ) ε D d l ,
-  restr-painting n (1+ p) (1+ q) δ δ' (⇒ Hp) (⇒ Hq) (↓↓ δ'≤δ) ε D E (d , l) c
+restr-painting n p (1+ q) (1+ δ) (1+ δ') Hn Hq δ'≤δ ε D E d (l , c) =
+  restr-layer n p q δ δ' Hn (⇓ Hq) (↓↓ δ'≤δ) ε D d l ,
+  restr-painting n (1+ p) (1+ q) δ δ' (⇒ Hn) (⇒ Hq) (↓↓ δ'≤δ) ε D E (d , l) c
 
-coh-frame n zero q r δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D d = refl
-coh-frame n (1+ p) zero r δ zero δ'' Hp ()
-coh-frame n (1+ p) (1+ q) zero δ δ' zero Hp Hq ()
-coh-frame n (1+ p) (1+ q) (1+ r) δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D (d , l) =
+coh-frame n zero q r δ δ' δ'' Hn Hq Hr δ''≤δ' δ'≤δ ε ω D d = refl
+coh-frame n (1+ p) zero r δ zero δ'' Hn ()
+coh-frame n (1+ p) (1+ q) zero δ δ' zero Hn Hq ()
+coh-frame n (1+ p) (1+ q) (1+ r) δ δ' δ'' Hn Hq Hr δ''≤δ' δ'≤δ ε ω D (d , l) =
   Σ-≡→≡ (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'')
-             (← Hp) (← Hq) (← Hr) (s≤s δ''≤δ') (s≤s δ'≤δ) ε ω D d ,
-         coh-layer n p q r δ δ' δ'' (← Hp) (⇓ (← Hq)) (⇓ (← Hr)) δ''≤δ' δ'≤δ ε ω D d l)
+             (← Hn) (← Hq) (← Hr) (s≤s δ''≤δ') (s≤s δ'≤δ) ε ω D d ,
+         coh-layer n p q r δ δ' δ'' (← Hn) (⇓ (← Hq)) (⇓ (← Hr)) δ''≤δ' δ'≤δ ε ω D d l)
 
-coh-layer (1+ n) p q r δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D d l = fe _ _ (λ θ → I θ)
+coh-layer (1+ n) p q r δ δ' δ'' Hn Hq Hr δ''≤δ' δ'≤δ ε ω D d l = fe _ _ (λ θ → I θ)
  where
   I : (θ : arity)
     → subst (λ - → layer (1+ n) p δ _ (D .₁ .₁) - .Dom)
@@ -178,7 +178,7 @@ coh-layer (1+ n) p q r δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D d l = fe
     subst (λ - → painting n p δ _ (D .₁ .₁ .₁) (D .₁ .₁ .₂)
                    (restr-frame n p p δ 0 _ _ _ θ (D .₁ .₁) -) .Dom)
       (coh-frame (1+ n) p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ (s≤s δ''≤δ') _ ε ω D d) (
-    restr-layer (1+ n) p q δ δ' Hp Hq δ'≤δ ε (D .₁) _
+    restr-layer (1+ n) p q δ δ' Hn Hq δ'≤δ ε (D .₁) _
       (restr-layer (2+ n) p r (1+ δ) δ'' _ Hr (↑ (δ''≤δ' ↕ δ'≤δ)) ω D d l) θ)
       ≡⟨ subst-∘ (coh-frame (1+ n) p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ (s≤s δ''≤δ') _ ε ω D d) ⟩
     subst (λ - → painting n p δ _ (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
@@ -289,39 +289,39 @@ coh-layer (1+ n) p q r δ δ' δ'' Hp Hq Hr δ''≤δ' δ'≤δ ε ω D d l = fe
     restr-layer (1+ n) p r δ δ'' _ _ _ ω (D .₁) _
         (restr-layer (2+ n) p (1+ q) (1+ δ) (1+ δ') _ _ _ ε D d l) θ ∎
 
-coh-painting n p q r δ δ' zero Hp Hq Hr δ''≤δ' δ'≤δ ε ω D E d c with recover-nat-eq Hr
+coh-painting n p q r δ δ' zero Hn Hq Hr δ''≤δ' δ'≤δ ε ω D E d c with recover-nat-eq Hr
 ... | refl = refl
 coh-painting n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'')
-  Hp Hq Hr δ''≤δ' δ'≤δ ε ω D E d (l , c) =
+  Hn Hq Hr δ''≤δ' δ'≤δ ε ω D E d (l , c) =
   subst (λ - → painting n p (1+ δ) _ (D .₁ .₁) (D .₁ .₂) - .Dom)
     (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ _ _ ε ω D d)
     (restr-painting n p (1+ q) (1+ δ) (1+ δ') _ _ _ ε (D .₁) (D .₂)
      (restr-frame (1+ n) p (1+ r) (2+ δ) (1+ δ'') _ _ _ ω D d)
      (restr-painting (1+ n) p (1+ r) (2+ δ) (1+ δ'') _ _ _ ω D E d (l , c)))
     ≡⟨ subst-Σ (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ _ _ ε ω D d) ⟩
-  subst (λ - → layer n p δ Hp (D .₁ .₁) - .Dom)
+  subst (λ - → layer n p δ Hn (D .₁ .₁) - .Dom)
    (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ _ _ ε ω D d)
    (restr-layer n p q δ δ' _ _ _ ε (D .₁)
      (restr-frame (1+ n) p (1+ r) (2+ δ) (1+ δ'') _ _ _ ω D d)
      (restr-layer (1+ n) p r (1+ δ) δ'' _ _ _ ω D d l )) ,
-  subst (λ - → painting n (1+ p) δ (⇒ Hp) (D .₁ .₁) (D .₁ .₂) - .Dom)
+  subst (λ - → painting n (1+ p) δ (⇒ Hn) (D .₁ .₁) (D .₁ .₂) - .Dom)
    (Σ-≡→≡ (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ _ _ ε ω D d , refl))
    (restr-painting n (1+ p) (1+ q) δ δ' _ _ _ ε (D .₁) (D .₂)
-     (restr-frame    (1+ n) (1+ p) (1+ r) (1+ δ) δ'' (⇑ ⇒ Hp) (⇒ Hr) _ ω D (d , l))
+     (restr-frame    (1+ n) (1+ p) (1+ r) (1+ δ) δ'' (⇑ ⇒ Hn) (⇒ Hr) _ ω D (d , l))
      (restr-painting (1+ n) (1+ p) (1+ r) (1+ δ) δ'' _ _ _ ω D E (d , l) c))
-    ≡⟨ Σ-≡→≡ ( coh-layer n p q r δ δ' δ'' Hp (⇓ Hq) (⇓ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω _ d l
+    ≡⟨ Σ-≡→≡ ( coh-layer n p q r δ δ' δ'' Hn (⇓ Hq) (⇓ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω _ d l
              , subst-Σ' (coh-frame n p (1+ q) (1+ r) (1+ δ) (1+ δ') (1+ δ'') _ _ _ _ _ ε ω D d)
-                        (coh-layer n p q r δ δ' δ'' Hp (⇓ Hq) (⇓ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω _ d l)) ⟩
+                        (coh-layer n p q r δ δ' δ'' Hn (⇓ Hq) (⇓ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω _ d l)) ⟩
   restr-layer n p r δ δ'' _ _ _ ω (D .₁)
     (restr-frame (1+ n) p (2+ q) (2+ δ) (2+ δ') _ _ _ ε D d)
     (restr-layer (1+ n) p (1+ q) (1+ δ) (1+ δ') _ _ _ ε D d l) ,
-  subst (λ - → painting n (1+ p) δ (⇒ Hp) (D .₁ .₁) (D .₁ .₂) - .Dom)
-   (coh-frame n (1+ p) (1+ q) (1+ r) δ δ' δ'' (⇒ Hp) (⇒ Hq) (⇒ Hr) _ _ ε ω D (d , l))
+  subst (λ - → painting n (1+ p) δ (⇒ Hn) (D .₁ .₁) (D .₁ .₂) - .Dom)
+   (coh-frame n (1+ p) (1+ q) (1+ r) δ δ' δ'' (⇒ Hn) (⇒ Hq) (⇒ Hr) _ _ ε ω D (d , l))
    (restr-painting n (1+ p) (1+ q) δ δ' _ _ _ ε (D .₁) (D .₂)
-     (restr-frame    (1+ n) (1+ p) (1+ r) (1+ δ) δ'' (⇑ ⇒ Hp) (⇒ Hr) _ ω D (d , l))
+     (restr-frame    (1+ n) (1+ p) (1+ r) (1+ δ) δ'' (⇑ ⇒ Hn) (⇒ Hr) _ ω D (d , l))
      (restr-painting (1+ n) (1+ p) (1+ r) (1+ δ) δ'' _ _ _ ω D E (d , l) c))
     ≡⟨ Σ-≡→≡ (refl , coh-painting n (1+ p) (1+ q) (1+ r) δ δ' δ''
-         (⇒ Hp) (⇒ Hq) (⇒ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω D E (d , l) c) ⟩
+         (⇒ Hn) (⇒ Hq) (⇒ Hr) (↓↓ δ''≤δ') (↓↓ δ'≤δ) ε ω D E (d , l) c) ⟩
   restr-painting n p (1+ r) (1+ δ) (1+ δ'') _ _ _ ω (D .₁) (D .₂)
     (restr-frame (1+ n) p (2+ q) (2+ δ) (2+ δ') _ _ _ ε D d)
     (restr-painting (1+ n) p (2+ q) (2+ δ) (2+ δ') _ _ _ ε D E d (l , c)) ∎
@@ -331,3 +331,8 @@ record νSet-> (n : ℕ) (D : νSet-< n) : Type₁ where
  field
    this : νSet-= n D
    next : νSet-> (1+ n) (D , this)
+open νSet-> public
+
+
+νSet : Type₁
+νSet = νSet-> 0 tt 
