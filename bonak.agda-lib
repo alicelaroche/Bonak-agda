@@ -1,0 +1,7 @@
+name: bonak
+include:
+  src
+flags:
+   --without-K
+   --postfix-projections
+   --rewriting
