@@ -10,4 +10,4 @@ inequalities while avoiding transport hell.
 
 ## Goal
 
-The goal of this implementation is to show that the obtained data structure is isomorphic to the presheaf of the νCategory as defined in the original paper.
+The goal of this implementation is to show that the defined νSets are isomorphic to the presheafs of the νCategory as defined in the original paper.
