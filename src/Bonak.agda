@@ -2,7 +2,7 @@
 
 open import Prelude
 
-module Bonak-copy2
+module Bonak
   (fe : {A : Set} {B : A → Set}
       → (f g : (a : A) → B a)
       → (∀ a → f a ≡ g a)
