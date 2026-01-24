@@ -11,6 +11,7 @@ record ⊤ {ℓ} : Type ℓ where
 infix 4 _≡_
 data _≡_ {ℓ} {A : Type ℓ} (x : A) : A → Type ℓ where
   refl : x ≡ x
+
 {-# BUILTIN EQUALITY _≡_  #-}
 {-# BUILTIN REWRITE _≡_  #-}
 
@@ -144,10 +145,26 @@ nat-dec-eq {suc n} {suc m} with nat-dec-eq {n} {m}
 ... | inl eq  = inl (cong suc eq)
 ... | inr ¬eq = inr λ eq → ¬eq (cong pred eq)
 
++-zero-r : ∀ {n} → n + 0 ≡ n
++-zero-r {zero}  = refl
++-zero-r {suc n} = cong suc +-zero-r
 
 +-suc-r : ∀ {n m} → n + suc m ≡ suc (n + m)
 +-suc-r {zero}  = refl
 +-suc-r {suc n} = cong suc +-suc-r
+
++-suc-zero : ∀ n → suc n + zero ≡ suc n
++-suc-zero n = cong suc +-zero-r
+
++-zero-suc : ∀ n → zero + suc n ≡ suc n
++-zero-suc n = refl
+
++-suc-suc : ∀ n m → suc n + suc m ≡ suc (suc (n + m))
++-suc-suc n m = cong suc +-suc-r
+
++-comm : ∀ n m → n + m ≡ m + n
++-comm n zero = +-zero-r
++-comm n (1+ m) = trans +-suc-r (cong suc (+-comm n m))
 
 ⇑_ : ∀ {n m} → n ≡ m → suc n ≡ suc m
 ⇑ refl = refl
@@ -158,8 +175,19 @@ nat-dec-eq {suc n} {suc m} with nat-dec-eq {n} {m}
 ←_ : ∀ {n m p} → n + suc m ≡ p → suc n + m ≡ p
 ←_ eq = trans (sym +-suc-r) eq
 
+←'_ : ∀ {n m p} → n ≡ m + suc p → n ≡ suc m + p
+←'_ eq = trans eq +-suc-r
+
 ⇒_ : ∀ {n m p} → suc n + m ≡ p → n + suc m ≡ p 
 ⇒_ eq = trans +-suc-r eq
+
+⇒'_ : ∀ {n m p} → n ≡ suc m + p → n ≡ m + suc p 
+⇒'_ eq = trans eq (sym +-suc-r)
+
+_+0 : ∀ {n m} → n ≡ m → n ≡ m + 0
+_+0 eq = trans eq (sym +-zero-r)
+
+{-# REWRITE +-zero-r +-suc-r +-suc-zero +-zero-suc +-suc-suc #-}
 
 infixl 20 _+_
 
@@ -193,6 +221,5 @@ irr-recover : ∀ {ℓ} {A : Type ℓ} → A ⊎ (A → ⊥) → .A → A
 irr-recover (inl a)  _ = a
 irr-recover (inr ¬a) a = contradiction-irr (¬a a)
 
-opaque
-  recover-nat-eq : ∀ {n m : ℕ} → .(n ≡ m) → n ≡ m
-  recover-nat-eq = irr-recover nat-dec-eq
+recover-nat-eq : {n m : ℕ} → .(n ≡ m) → n ≡ m
+recover-nat-eq = irr-recover nat-dec-eq

@@ -42,33 +42,18 @@ makeF1-aux : (k : ℕ)
            → (restr : ∀ (p n : ℕ) → arity → .(p ≤ n) → F0 (suc n) → F0 n)
            → ∀ {p n} → Hom p n → F0 (k + n) → F0 (k + p)
 makeF1-aux k F0 restr base X = X
-makeF1-aux k F0 restr (ari-cons ε f) X =
-  restr k (k + _) ε (↑[ _ ] (◆ k)) (makeF1-aux (suc k) F0 restr f (subst F0 +-suc-r X))
-makeF1-aux k F0 restr (nil-cons f) X =
-  subst F0 (sym +-suc-r) (makeF1-aux (suc k) F0 restr f (subst F0 +-suc-r X))
+makeF1-aux k F0 restr {p} {n} (ari-cons ε f) X =
+  restr k (k + p) ε (↑[ p ] (◆ k)) (makeF1-aux (suc k) F0 restr f X)
+makeF1-aux k F0 restr (nil-cons f) X = makeF1-aux (suc k) F0 restr f X
 
-F1-subst : (F0 : ℕ -> Type)
-         → (restr : ∀ (p n : ℕ) → arity → .(p ≤ n) → F0 (suc n) → F0 n)
-         → (p n n' : ℕ) (ε : arity) (H : n ≡ n') → .{Hp : p ≤ n}
-         → {X : F0 (1+ n)}
-         → subst F0 H (restr p n ε Hp X) ≡
-           restr p n' ε (subst (p ≤_) H Hp) (subst F0 (cong suc H) X)
-F1-subst F0 restr p n n' ε refl = refl
 
 makeF1-aux-id : ∀ k
   → (F0 : ℕ → Type)
   → (restr : ∀ (p n : ℕ) → arity → .(p ≤ n) → F0 (suc n) → F0 n)
   → ∀ (n : ℕ) (X : F0 (k + n))
-  → makeF1-aux k F0 restr id X ≡ X
+  → makeF1-aux k F0 restr (id {n}) X ≡ X
 makeF1-aux-id k F0 restr zero X   = refl
-makeF1-aux-id k F0 restr (1+ n) X =
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr id (subst F0 +-suc-r X))
-    ≡⟨ cong (subst F0 (sym +-suc-r))
-        (makeF1-aux-id (1+ k) F0 restr n (subst F0 +-suc-r X)) ⟩
-  subst F0 (sym +-suc-r) (subst F0 +-suc-r X)
-    ≡⟨ subst-sym-l (+-suc-r {k} {n}) X ⟩
-  X ∎
+makeF1-aux-id k F0 restr (1+ n) X = makeF1-aux-id (1+ k) F0 restr n X
 
 makeF1-aux-compose-helper : ∀ k k' → .(k'≤k : k' ≤ k)
   → (F0 : ℕ → Type)
@@ -80,52 +65,19 @@ makeF1-aux-compose-helper : ∀ k k' → .(k'≤k : k' ≤ k)
   → ∀ (p n : ℕ) (ε : arity) (f : Hom p n) (X : F0 (suc k + n))
   → makeF1-aux k F0 restr f (restr k' (k + n) ε (↑[ n ] k'≤k) X)
   ≡ restr k' (k + p) ε (↑[ p ] k'≤k) (makeF1-aux (suc k) F0 restr f X)
-makeF1-aux-compose-helper k k' k'≤k F0 restr restr-correct p n ε base X =
-  refl
-
+makeF1-aux-compose-helper k k' k'≤k F0 restr restr-correct p n ε base X = refl
 makeF1-aux-compose-helper k k' k'≤k F0 restr restr-correct p (1+ n) ε (ari-cons ω f) X =
   restr k (k + p) ω _
-   (makeF1-aux (1+ k) F0 restr f
-     (subst F0 +-suc-r (restr k' (k + 1+ n) ε _ X)))
-    ≡⟨ cong (λ - → restr k (k + p) ω (↑[ p ] ◆ k) (makeF1-aux (1+ k) F0 restr f -))
-         (F1-subst F0 restr k' (k + 1+ n) (1+ k + n) ε +-suc-r) ⟩
-  restr k (k + p) ω (↑[ p ] ◆ k)
-   (makeF1-aux (1+ k) F0 restr f
-     (restr k' (1+ k + n) ε (↑ (↑[ n ] k'≤k)) (subst F0 (cong suc +-suc-r) X)))
+    (makeF1-aux (1+ k) F0 restr f (restr k' (1+ (k + n)) ε _ X))
     ≡⟨ cong (restr k (k + p) ω _)
-         (makeF1-aux-compose-helper (1+ k) k' (↑ k'≤k) F0 restr restr-correct p n ε f _) ⟩
-  restr k (k + p) ω (↑[ p ] ◆ k)
-    (restr k' (1+ k + p) ε _
-      (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X)))
+        (makeF1-aux-compose-helper (1+ k) k' (↑ k'≤k) F0 restr restr-correct p n ε f _) ⟩
+  restr k (k + p) ω _
+    (restr k' (1+ k + p) ε _ (makeF1-aux (2+ k) F0 restr f X))
     ≡⟨ restr-correct k' k (k + p) k'≤k (↑[ p ] (◆ k)) ε ω _ ⟩⁻¹
   restr k' (k + p) ε _
-    (restr (1+ k) (1+ (k + p)) ω _
-       (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X))) ∎
-       
+    (restr (1+ k) (1+ (k + p)) ω _ (makeF1-aux (2+ k) F0 restr f X)) ∎ 
 makeF1-aux-compose-helper k k' k'≤k F0 restr restr-correct (1+ p) (1+ n) ε (nil-cons f) X =
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr f
-      (subst F0 +-suc-r (restr k' (k + 1+ n) ε _ X)))
-    ≡⟨ cong (λ - → subst F0 (sym +-suc-r) (makeF1-aux (1+ k) F0 restr f -))
-         ((F1-subst F0 restr k' (k + 1+ n) (1+ k + n) ε +-suc-r)) ⟩
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr f
-      (restr k' (1+ k + n) ε _ (subst F0 (cong suc +-suc-r) X)))
-    ≡⟨ cong (subst F0 (sym +-suc-r))
-        (makeF1-aux-compose-helper (1+ k) k' (↑ k'≤k) F0 restr restr-correct p n ε f _) ⟩
-  subst F0 (sym +-suc-r)
-    (restr k' (1+ k + p) ε _
-      (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X)))
-    ≡⟨ F1-subst F0 restr k' (1+ k + p) (k + 1+ p) ε (sym +-suc-r) ⟩
-  restr k' (k + 1+ p) ε _
-    (subst F0 (cong suc (sym +-suc-r))
-      (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X)))
-    ≡⟨ cong (λ - → restr k' (k + 1+ p) ε (↑[ 1+ p ] k'≤k)
-                    (subst F0 - (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X))))
-        (ℕ-UIP _ _) ⟩ 
-  restr k' (k + 1+ p) ε _
-    (subst F0 (sym (cong suc +-suc-r))
-      (makeF1-aux (2+ k) F0 restr f (subst F0 (cong suc +-suc-r) X))) ∎
+  makeF1-aux-compose-helper (1+ k) k' (↑ k'≤k) F0 restr restr-correct p n ε f _
 
 makeF1-aux-compose : ∀ k
   → (F0 : ℕ → Type)
@@ -137,46 +89,18 @@ makeF1-aux-compose : ∀ k
   → ∀ (p q n : ℕ) (g : Hom q n) (f : Hom p q) (X : F0 (k + n))
   → makeF1-aux k F0 restr f (makeF1-aux k F0 restr g X) ≡
     makeF1-aux k F0 restr (compose g f ) X
-
 makeF1-aux-compose k F0 restr restr-correct p q n base f X = refl
 makeF1-aux-compose k F0 restr restr-correct p q n (ari-cons ε g) f X =
   makeF1-aux k F0 restr f
-    (restr k (k + q) ε _ (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))
+    (restr k (k + q) ε _ (makeF1-aux (1+ k) F0 restr g X))
     ≡⟨ makeF1-aux-compose-helper k k (◆ k) F0 restr restr-correct p q ε f _ ⟩
-  restr k (k + p) ε _
-    (makeF1-aux (1+ k) F0 restr f
-      (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))
-    ≡⟨ cong (restr k (k + p) ε _)
-        (makeF1-aux-compose (1+ k) F0 restr restr-correct p q _ g f _) ⟩
-  restr k (k + p) ε _ (makeF1-aux (1+ k) F0 restr (compose g f) (subst F0 +-suc-r X)) ∎
+  restr k (k + p) ε _ (makeF1-aux (1+ k) F0 restr f (makeF1-aux (1+ k) F0 restr g X))
+    ≡⟨ cong (restr k (k + p) ε _) (makeF1-aux-compose (1+ k) F0 restr restr-correct p q _ g f _) ⟩
+  restr k (k + p) ε _ (makeF1-aux (1+ k) F0 restr (compose g f) X) ∎
 makeF1-aux-compose k F0 restr restr-correct p (1+ q) (1+ n) (nil-cons g) (ari-cons ε f) X =
-  restr k (k + p) ε _
-    (makeF1-aux (1+ k) F0 restr f
-      (subst F0 (+-suc-r {k} {q}) (subst F0 (sym +-suc-r)
-        (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))))
-    ≡⟨ cong (λ - → restr k (k + p) ε (↑[ p ] ◆ k) (makeF1-aux (1+ k) F0 restr f -))
-        (subst-sym-r (+-suc-r {k} {q}) (makeF1-aux (1+ k) F0 restr g _)) ⟩
-  restr k (k + p) ε _
-    (makeF1-aux (1+ k) F0 restr f
-      (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))
-    ≡⟨ cong (restr k (k + p) ε _)
-        (makeF1-aux-compose (1+ k) F0 restr restr-correct p q n g f _) ⟩
-  restr k (k + p) ε _
-    (makeF1-aux (1+ k) F0 restr (compose g f) (subst F0 +-suc-r X)) ∎
+  cong (restr k (k + p) ε _) (makeF1-aux-compose (1+ k) F0 restr restr-correct p q n g f X)
 makeF1-aux-compose k F0 restr restr-correct (1+ p) (1+ q) (1+ n) (nil-cons g) (nil-cons f) X =
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr f
-       (subst F0 (+-suc-r {k} {q}) (subst F0 (sym +-suc-r)
-          (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))))
-    ≡⟨ cong (λ - → subst F0 (sym +-suc-r) (makeF1-aux (1+ k) F0 restr f -))
-        (subst-sym-r (+-suc-r {k} {q}) (makeF1-aux (1+ k) F0 restr g _))  ⟩
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr f
-      (makeF1-aux (1+ k) F0 restr g (subst F0 +-suc-r X)))
-    ≡⟨ cong (subst F0 (sym +-suc-r))
-        (makeF1-aux-compose (1+ k) F0 restr restr-correct p q n g f _) ⟩
-  subst F0 (sym +-suc-r)
-    (makeF1-aux (1+ k) F0 restr (compose g f) (subst F0 +-suc-r X)) ∎
+  makeF1-aux-compose (1+ k) F0 restr restr-correct p q n g f _
 
 makeF1 : (F0 : ℕ → Type)
        → (restr : ∀ (p n : ℕ) → arity → .(p ≤ n) → F0 (suc n) → F0 n)
@@ -223,4 +147,3 @@ makePresheaf F0 restr restr-correct .F0 = F0
 makePresheaf F0 restr restr-correct .F1 = makeF1 _ restr
 makePresheaf F0 restr restr-correct .F1-id = makeF1-id _ restr
 makePresheaf F0 restr restr-correct .F1-compose = makeF1-compose _ restr restr-correct
- 

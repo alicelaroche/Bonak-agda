@@ -5,3 +5,4 @@ flags:
    --without-K
    --postfix-projections
    --rewriting
+   --confluence-check
