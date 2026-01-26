@@ -40,6 +40,9 @@ sym refl = refl
 trans : ∀ {ℓ} {A : Type ℓ} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 trans p refl = p
 
+subst : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → Type ℓ') {a a' : A} → a ≡ a' → B a → B a'
+subst B refl b = b
+
 cong : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A} → (f : A → B)
      → a ≡ a' → f a ≡ f a'
 cong f refl = refl
@@ -48,8 +51,10 @@ cong-app : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : (a : A) →
          → f ≡ g → (a : A) → f a ≡ g a
 cong-app refl a = refl
 
-subst : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → Type ℓ') {a a' : A} → a ≡ a' → B a → B a'
-subst B refl b = b
+cong₂ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ'} {a a' : A} {b : B a}
+      → (f : (a : A) → B a → C)
+      → (H : a ≡ a') → f a b ≡ f a' (subst B H b)
+cong₂ f refl = refl
 
 subst-sym-l : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
           → (H : a ≡ a') (b : B a)
@@ -166,27 +171,6 @@ nat-dec-eq {suc n} {suc m} with nat-dec-eq {n} {m}
 +-comm n zero = +-zero-r
 +-comm n (1+ m) = trans +-suc-r (cong suc (+-comm n m))
 
-⇑_ : ∀ {n m} → n ≡ m → suc n ≡ suc m
-⇑ refl = refl
-
-⇓_ : ∀ {n m} → suc n ≡ suc m → n ≡ m
-⇓ refl = refl
-
-←_ : ∀ {n m p} → n + suc m ≡ p → suc n + m ≡ p
-←_ eq = trans (sym +-suc-r) eq
-
-←'_ : ∀ {n m p} → n ≡ m + suc p → n ≡ suc m + p
-←'_ eq = trans eq +-suc-r
-
-⇒_ : ∀ {n m p} → suc n + m ≡ p → n + suc m ≡ p 
-⇒_ eq = trans +-suc-r eq
-
-⇒'_ : ∀ {n m p} → n ≡ suc m + p → n ≡ m + suc p 
-⇒'_ eq = trans eq (sym +-suc-r)
-
-_+0 : ∀ {n m} → n ≡ m → n ≡ m + 0
-_+0 eq = trans eq (sym +-zero-r)
-
 {-# REWRITE +-zero-r +-suc-r +-suc-zero +-zero-suc +-suc-suc #-}
 
 infixl 20 _+_
@@ -213,13 +197,3 @@ data _≤_ : ℕ → ℕ → Type where
 _↕_ : ∀ {n m p} → n ≤ m → m ≤ p → n ≤ p
 0≤n ↕ m≤p = 0≤n
 s≤s n≤m ↕ s≤s m≤p = s≤s (n≤m ↕ m≤p)
-
-contradiction-irr : ∀ {ℓ} {A : Type ℓ} → .⊥ → A
-contradiction-irr ()
-
-irr-recover : ∀ {ℓ} {A : Type ℓ} → A ⊎ (A → ⊥) → .A → A
-irr-recover (inl a)  _ = a
-irr-recover (inr ¬a) a = contradiction-irr (¬a a)
-
-recover-nat-eq : {n m : ℕ} → .(n ≡ m) → n ≡ m
-recover-nat-eq = irr-recover nat-dec-eq

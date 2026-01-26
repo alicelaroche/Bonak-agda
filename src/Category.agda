@@ -46,7 +46,6 @@ makeF1-aux k F0 restr {p} {n} (ari-cons ε f) X =
   restr k (k + p) ε (↑[ p ] (◆ k)) (makeF1-aux (suc k) F0 restr f X)
 makeF1-aux k F0 restr (nil-cons f) X = makeF1-aux (suc k) F0 restr f X
 
-
 makeF1-aux-id : ∀ k
   → (F0 : ℕ → Type)
   → (restr : ∀ (p n : ℕ) → arity → .(p ≤ n) → F0 (suc n) → F0 n)

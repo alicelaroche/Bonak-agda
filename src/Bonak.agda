@@ -19,9 +19,6 @@ open import Inequalities
 
 open HΠ fe fe-≡
 
-postulate
- admit : ∀ {ℓ} {A : Set ℓ} → A
-
 coh₂ : ∀ {A : HSet} {B : A .Dom → Type}
      → {a a₁ a₁' a₂ a₂' a' : A .Dom} {b : B a}
      → (H₁ : a₁' ≡ a') (H₁' : a₁ ≡ a₁') (H₁'' : a ≡ a₁)
@@ -338,6 +335,14 @@ record νSet-> (n : ℕ) (D : νSet-< n) : Type₁ where
    next : νSet-> (1+ n) (D , this)
 open νSet-> public
 
-
 νSet : Type₁
-νSet = νSet-> 0 tt 
+νSet = νSet-> 0 tt
+
+νSet' : ℕ → Type₁
+νSet'-helper : ∀ n → νSet' n → νSet-< (1+ n)
+
+νSet' zero   = νSet-= 0 tt
+νSet' (1+ n) = Σ[ D ∈ νSet' n ] νSet-= (1+ n) (νSet'-helper n D)
+
+νSet'-helper zero E = tt , E
+νSet'-helper (1+ n) (D , E) = νSet'-helper n D , E

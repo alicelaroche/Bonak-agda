@@ -82,9 +82,16 @@ drop₄-3 (ineq₄ δpr _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
 ◆₃_ : ∀ {p n} → [ p ≤ n ]₂ → [ p ≤ p ≤ n ]₃
 ◆₃_ {p} (ineq₂ δpn Hpn) = ineq₃ 0 δpn δpn (≡ℕ-refl p) Hpn Hpn (≡ℕ-refl δpn)
 
+◆₃'_ : ∀ {p n} → [ p ≤ n ]₂ → [ p ≤ n ≤ n ]₃
+◆₃'_ {p} {n} (ineq₂ δpn Hpn) = ineq₃ δpn δpn 0 Hpn Hpn (≡ℕ-refl n) (≡ℕ-refl δpn)
+
 ◆₄_ : ∀ {p q n} → [ p ≤ q ≤ n ]₃ → [ p ≤ p ≤ q ≤ n ]₄
 ◆₄_ {p} (ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn) =
  ineq₄ 0 δpq δpn δpq δpn δqn (≡ℕ-refl p) Hpq Hpn Hpq Hpn Hqn (≡ℕ-refl δpq) (≡ℕ-refl δpn) Hpqn Hpqn
+
+◆₄'_ : ∀ {p q n} → [ p ≤ q ≤ n ]₃ → [ p ≤ q ≤ n ≤ n ]₄
+◆₄'_ {p} {q} {n} (ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn) =
+ ineq₄ δpq δpn δpn δqn δqn 0 Hpq Hpn Hpn Hqn Hqn (≡ℕ-refl n) Hpqn Hpqn (≡ℕ-refl δpn) (≡ℕ-refl δqn)
 
 ↓₂_ : ∀ {p n} → [ 1+ p ≤ n ]₂ → [ p ≤ n ]₂
 ↓₂ ineq₂ δpn Hpn = ineq₂ (1+ δpn) Hpn
@@ -94,6 +101,9 @@ drop₄-3 (ineq₄ δpr _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
 
 ↑₂_ : ∀ {p n} → [ p ≤ n ]₂ → [ p ≤ 1+ n ]₂
 ↑₂ ineq₂ δpn Hpn = ineq₂ (1+ δpn) Hpn
+
+⇑₂_ : ∀ {p n} → [ p ≤ n ]₂ → [ 1+ p ≤ 1+ n ]₂
+⇑₂ ineq₂ δpn Hpn = ineq₂ δpn Hpn
 
 ↓₃_ : ∀ {p q n} → [ 1+ p ≤ q ≤ n ]₃ → [ p ≤ q ≤ n ]₃
 ↓₃ ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn =
@@ -115,6 +125,10 @@ drop₄-3 (ineq₄ δpr _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
 ↑₃' ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn =
   ineq₃ (1+ δpq) (1+ δpn) δqn Hpq Hpn Hqn Hpqn
 
+⇑₃_ : ∀ {p q n} → [ p ≤ q ≤ n ]₃ → [ 1+ p ≤ 1+ q ≤ 1+ n ]₃
+⇑₃ ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn =
+ ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn
+ 
 ↓₄_ : ∀ {p r q n} → [ 1+ p ≤ r ≤ q ≤ n ]₄ → [ p ≤ r ≤ q ≤ n ]₄
 ↓₄ ineq₄ δpr δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn =
   ineq₄ (1+ δpr) (1+ δpq) (1+ δpn) δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn
@@ -122,6 +136,8 @@ drop₄-3 (ineq₄ δpr _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
 ⇓₄_ : ∀ {p r q n} → [ 1+ p ≤ 1+ r ≤ 1+ q ≤ 1+ n ]₄ → [ p ≤ r ≤ q ≤ n ]₄ 
 ⇓₄ ineq₄ δpr δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn =
   ineq₄ δpr δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn
+
+--examples of induction, not usable in practice
 
 variable
   ℓ : Level
