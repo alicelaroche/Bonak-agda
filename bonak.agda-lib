@@ -6,3 +6,4 @@ flags:
    --postfix-projections
    --rewriting
    --confluence-check
+   --guardedness

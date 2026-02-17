@@ -19,6 +19,10 @@ recover-nat-eq' : (n m : ℕ) → .(n ≡ℕ m) → n ≡ m
 recover-nat-eq' zero zero n≡m = refl
 recover-nat-eq' (1+ n) (1+ m) n≡m = cong suc (recover-nat-eq' n m n≡m)
 
+recover-nat-eq'-refl : ∀ n → recover-nat-eq' n n (≡ℕ-refl n) ≡ refl
+recover-nat-eq'-refl zero   = refl
+recover-nat-eq'-refl (1+ n) = cong (cong suc) (recover-nat-eq'-refl n)
+
 record [_≤_]₂ (p n : ℕ) : Type where
   eta-equality
   constructor ineq₂
@@ -54,7 +58,6 @@ record [_≤_≤_≤_]₄ (p r q n : ℕ) : Type where
     .Hpqn : δpq + δqn ≡ℕ δpn
     .Hrqn : δrq + δqn ≡ℕ δrn
 open [_≤_≤_≤_]₄ public
-
 
 drop₃-1 : ∀ {p q n} → [ p ≤ q ≤ n ]₃ → [ q ≤ n ]₂
 drop₃-1 (ineq₃ _ _ δqn _ _ Hqn _) =

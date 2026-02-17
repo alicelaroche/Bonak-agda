@@ -2,6 +2,9 @@ module Prelude where
 
 open import Agda.Primitive renaming (Set to Type) public
 
+id : ∀ {ℓ} {A : Type ℓ} → A → A
+id x = x
+
 data ⊥ : Type where
 
 record ⊤ {ℓ} : Type ℓ where
@@ -38,10 +41,10 @@ sym : ∀ {ℓ} {A : Type ℓ} {a a' : A} → a ≡ a' → a' ≡ a
 sym refl = refl
 
 trans : ∀ {ℓ} {A : Type ℓ} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
-trans p refl = p
+trans refl q = q
 
-subst : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → Type ℓ') {a a' : A} → a ≡ a' → B a → B a'
-subst B refl b = b
+infixr 30 _∙_
+_∙_ = trans
 
 cong : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A} → (f : A → B)
      → a ≡ a' → f a ≡ f a'
@@ -51,19 +54,50 @@ cong-app : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : (a : A) →
          → f ≡ g → (a : A) → f a ≡ g a
 cong-app refl a = refl
 
+subst : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → Type ℓ') {a a' : A} → a ≡ a' → B a → B a'
+subst B refl b = b
+
+transport : ∀ {ℓ} {A B : Type ℓ} → A ≡ B → A → B
+transport = subst (λ x → x) 
+
+dcong : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} (f : (x : A) → B x) {x y}
+      → (p : x ≡ y) → subst B p (f x) ≡ f y
+dcong f refl = refl
+
 cong₂ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ'} {a a' : A} {b : B a}
       → (f : (a : A) → B a → C)
-      → (H : a ≡ a') → f a b ≡ f a' (subst B H b)
+      → (p : a ≡ a') → f a b ≡ f a' (subst B p b)
 cong₂ f refl = refl
 
+trans-assoc : ∀ {ℓ} {A : Type ℓ} {x y z w : A}
+            → (p : x ≡ y) (q : y ≡ z) (r : z ≡ w)
+            → (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+trans-assoc refl q r = refl
+
+trans-identity-l : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
+                 → refl ∙ p ≡ p
+trans-identity-l H = refl
+
+trans-identity-r : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
+                 → p ∙ refl ≡ p
+trans-identity-r refl = refl
+
+trans-sym-l : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
+            → (sym p) ∙ p ≡ refl
+trans-sym-l refl = refl
+
+trans-sym-r : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
+            → p ∙ (sym p) ≡ refl
+trans-sym-r refl = refl
+
 subst-sym-l : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
-          → (H : a ≡ a') (b : B a)
-          → subst B (sym H) (subst B H b) ≡ b
+            → (p : a ≡ a') (b : B a)
+            → subst B (sym p) (subst B p b) ≡ b
 subst-sym-l refl b = refl
 
 subst-sym-r : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
-          → (H : a ≡ a') (b : B a')
-          → subst B H (subst B (sym H) b) ≡ b
+            → (p : a ≡ a') (b : B a')
+            → subst B p (subst B (sym p) b) ≡ b
 subst-sym-r refl b = refl
 
 subst-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {x y : A} {C : B → Type ℓ''}
@@ -75,9 +109,18 @@ subst-∘ refl = refl
 subst-application : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ}
                   → (B₁ : A → Type ℓ') {B₂ : A → Type ℓ''}
                   → {x₁ x₂ : A} {y : B₁ x₁}
-                  → (g : ∀ x → B₁ x → B₂ x) (eq : x₁ ≡ x₂)
-                  → subst B₂ eq (g x₁ y) ≡ g x₂ (subst B₁ eq y)
+                  → (g : ∀ x → B₁ x → B₂ x) (p : x₁ ≡ x₂)
+                  → subst B₂ p (g x₁ y) ≡ g x₂ (subst B₁ p y)
 subst-application _ _ refl = refl
+
+cong-id : ∀ {ℓ} {A : Type ℓ} {a a' : A} → (p : a ≡ a') → cong id p ≡ p
+cong-id refl = refl
+
+cong-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''}
+       → {a a' : A} → (f : A → B) → (g : B → C)
+       → (p : a ≡ a')
+       → cong g (cong f p) ≡ cong (λ - → g (f -)) p
+cong-∘ f g refl = refl
 
 record Σ {ℓ ℓ'} (A : Type ℓ) (B : A → Type ℓ') : Type (ℓ ⊔ ℓ') where
   constructor _,_ 
@@ -94,17 +137,29 @@ infixr 4 _,_
 infix 5 Σ
 syntax Σ A (λ x → B) = Σ[ x ∈ A ] B
 
-Σ-≡ : {A : Type} {B : A → Type} → Σ A B → Σ A B → Type
+infixr 4 _×_
+_×_ : ∀ {ℓ ℓ'} (A : Type ℓ) (B : Type ℓ') → Type (ℓ ⊔ ℓ')
+_×_ A B = Σ A (λ _ → B)
+
+Σ-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} → Σ A B → Σ A B → Type (ℓ ⊔ ℓ')
 Σ-≡ {B = B} (a , b) (a' , b') = Σ[ eq ∈ a ≡ a' ] (subst B eq b ≡ b')
 
-Σ-≡→≡ : {A : Type} {B : A → Type} {x y : Σ A B} → Σ-≡ x y → x ≡ y
+Σ-≡-assoc : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : A → Set ℓ'} {C : Σ[ x ∈ A ] B x → Set ℓ''}
+          → {a a' : A} {b : B a} {b' : B a'} {c : C (a , b)} {c' : C (a' , b')}
+          → Σ-≡ ((a , b) , c) ((a' , b') , c')
+          → Σ-≡ (a , (b , c)) (a' , (b' , c'))
+Σ-≡-assoc (refl , refl) = refl , refl
+
+Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+      → {x y : Σ A B} → Σ-≡ x y → x ≡ y
 Σ-≡→≡  (refl , refl) = refl 
 
-≡→Σ-≡ : {A : Type} {B : A → Type} {x y : Σ A B} → x ≡ y → Σ-≡ x y
+≡→Σ-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+      → {x y : Σ A B} → x ≡ y → Σ-≡ x y
 ≡→Σ-≡  refl = (refl , refl)
 
-≡→Σ-≡→≡ : {A : Type} {B : A → Type} {x y : Σ A B} → (p : x ≡ y)
-        → p ≡ Σ-≡→≡ (≡→Σ-≡ p)
+≡→Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+        → {x y : Σ A B} → (p : x ≡ y) → p ≡ Σ-≡→≡ (≡→Σ-≡ p)
 ≡→Σ-≡→≡ refl = refl
 
 subst-Σ : {X : Set} {A : X → Set} {B : Σ[ x ∈ X ] A x → Set} {x₁ x₂ : X} {a : A x₁} {b : B (x₁ , a)}

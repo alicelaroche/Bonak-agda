@@ -2,12 +2,12 @@
 
 open import Prelude
 
-module Bonak
-  (fe : {A : Set} {B : A → Set}
+module νSet.Base
+  (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
       → (f g : (a : A) → B a)
       → (∀ a → f a ≡ g a)
       → f ≡ g)
-  (fe-≡ : {A : Set} {B : A → Set}
+  (fe-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
         → (f g : (a : A) → B a)
         → (p : f ≡ g)
         → fe f g (λ a → cong-app p a) ≡ p)
@@ -30,7 +30,7 @@ coh₂ : ∀ {A : HSet} {B : A .Dom → Type}
        subst B H₂' (
        subst B H₂'' b))
 coh₂ {A} {B} {b = b} refl refl refl refl refl H₂'' =
- cong (λ - → subst B - b) (A .has-UIP refl H₂'')
+ cong (λ - → subst B - b) (A .has-UIP _ _ refl H₂'')
 
 νSet-< : ℕ → Type₁
 νSet-= : (n : ℕ) → νSet-< n → Type₁
@@ -118,8 +118,11 @@ I : ∀ n p δ (p≤n : [ p ≤ n ]₂)
   → δ ≡ p≤n .δpn
   → (D : νSet-< n) (E : νSet-= n D)
   → frame n p p≤n D .Dom → HSet
-I n p zero (ineq₂ δpn Hpn) refl D E d with recover-nat-eq' p n Hpn
-... | refl = E d
+I n p zero (ineq₂ δpn Hpn) refl D E d = E (coe d)
+  where
+   coe : frame n p (ineq₂ zero Hpn) D .Dom → frame n n (◆₂ n) D .Dom
+   coe d with recover-nat-eq' p n Hpn
+   ... | refl = d
 I n p (1+ δ) (ineq₂ _ Hpn) refl D E d =
   let 1+p≤n = ineq₂ δ Hpn in 
   HΣ[ l ∈ layer n p 1+p≤n D d ] I n (1+ p) δ 1+p≤n refl D E (d , l)
@@ -337,12 +340,3 @@ open νSet-> public
 
 νSet : Type₁
 νSet = νSet-> 0 tt
-
-νSet' : ℕ → Type₁
-νSet'-helper : ∀ n → νSet' n → νSet-< (1+ n)
-
-νSet' zero   = νSet-= 0 tt
-νSet' (1+ n) = Σ[ D ∈ νSet' n ] νSet-= (1+ n) (νSet'-helper n D)
-
-νSet'-helper zero E = tt , E
-νSet'-helper (1+ n) (D , E) = νSet'-helper n D , E

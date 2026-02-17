@@ -3,6 +3,7 @@ module Index where
 open import Prelude
 open import Inequalities
 open import HSet
-open import Bonak
+open import Equiv
 open import Category
-open import Face
+open import νSet
+open import Correspondence

@@ -1,13 +1,11 @@
-{-# OPTIONS --termination-depth=3 #-}
-
 open import Prelude
 
-module Face
-  (fe : {A : Set} {B : A → Set}
+module νSet.Face
+    (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
       → (f g : (a : A) → B a)
       → (∀ a → f a ≡ g a)
       → f ≡ g)
-  (fe-≡ : {A : Set} {B : A → Set}
+  (fe-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
         → (f g : (a : A) → B a)
         → (p : f ≡ g)
         → fe f g (λ a → cong-app p a) ≡ p)
@@ -18,8 +16,7 @@ open import Inequalities
 open import HSet
 open HΠ fe fe-≡
 
-open import Category arity
-open import Bonak fe fe-≡ arity
+open import νSet.Base fe fe-≡ arity
 
 getFrame : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃)
          → (D : νSet-< n)
@@ -170,26 +167,26 @@ getPaintingRestr n p q p≤q≤n ε D E = helper p q _ p≤q≤n refl
    let 1+p≤q≤n = ineq₃ δ δpn δqn Hpq Hpn Hqn Hpqn in
    helper (1+ p) (1+ q) _ 1+p≤q≤n refl (d , l) c
 
-Face-base : ∀ n p (p≤n : [ p ≤ n ]₂) → arity
-          → (D : νSet-< (1+ n)) (E : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom → HSet)
-          → (d : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom)
-          → Σ[ d ∈ frame n n (◆₂ n) (D .₁) .Dom ]
-            (painting n n (◆₂ n) (D .₁) (D .₂) d .Dom)
-Face-base n p p≤n ε D E d =
+Face : ∀ n p (p≤n : [ p ≤ n ]₂) → arity
+     → (D : νSet-< (1+ n))
+     → (d : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom)
+     → Σ[ d ∈ frame n n (◆₂ n) (D .₁) .Dom ]
+      (painting n n (◆₂ n) (D .₁) (D .₂) d .Dom)
+Face n p p≤n ε D d =
  getPainting n p n (◆₃' p≤n) (D .₁) (D .₂) _
    (getFrame (1+ n) (1+ p) (1+ n) (⇑₃ ◆₃' p≤n) D d .₂ ε)
 
-Face-base-coh : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃) 
+Face-coh : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃) 
               → (ε ω : arity)
-              → (D : νSet-< (2+ n)) (E : νSet-= (2+ n) D)
+              → (D : νSet-< (2+ n))
               → (d : frame (2+ n) (2+ n) (◆₂ 2+ n) D .Dom)
-              → Face-base n q (drop₃-1 p≤q≤n) ε (D .₁) (D .₂)
-                  (Face-base (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω D E d .₁)
-              ≡ Face-base n p (drop₃-2 p≤q≤n) ω (D .₁) (D .₂)
-                  (Face-base (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D E d .₁)
-Face-base-coh n p q p≤q≤n ε ω D E d =
-  Face-base n q (drop₃-1 p≤q≤n) ε (D .₁) (D .₂)
-    (Face-base (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω D E d .₁)
+              → Face n q (drop₃-1 p≤q≤n) ε (D .₁)
+                  (Face (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω D d .₁)
+              ≡ Face n p (drop₃-2 p≤q≤n) ω (D .₁)
+                  (Face (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D d .₁)
+Face-coh n p q p≤q≤n ε ω D d =
+  Face n q (drop₃-1 p≤q≤n) ε (D .₁)
+    (Face (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω D d .₁)
     ≡⟨ cong (λ - → getPainting n q n (◆₃' drop₃-1 p≤q≤n) (D .₁ .₁) (D .₁ .₂) _ (- .₂ ε))
             (getFrame-getPainting' (1+ n) p (1+ n) (1+ q) (◆₄' (↑₃' p≤q≤n)) (D .₁) (D .₂) _
                (getFrame (2+ n) (1+ p) (2+ n) (↑₃' ⇑₃ ◆₃' drop₃-2 p≤q≤n) D d .₂ ω)) ⟩
@@ -225,13 +222,80 @@ Face-base-coh n p q p≤q≤n ε ω D E d =
   getPainting n p n (◆₃' drop₃-2 p≤q≤n) (D .₁ .₁) (D .₁ .₂) _
     (getFrame (1+ n) (1+ p) (1+ q) (⇑₃ p≤q≤n) (D .₁)
     (getFrame (1+ n) (1+ q) (1+ n) (⇑₃ ◆₃' drop₃-1 p≤q≤n) (D .₁)
-       (Face-base (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D E d .₁)) .₂ ω)
+       (Face (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D d .₁)) .₂ ω)
     ≡⟨ cong (λ - → getPainting n p n (◆₃' drop₃-2 p≤q≤n) (D .₁ .₁) (D .₁ .₂) _ (- .₂ ω))
             (getFrame-compose (1+ n) (1+ p) (1+ n) (1+ q) (◆₄' ⇑₃ p≤q≤n) (D .₁)
-              (Face-base (1+ n) (1+ q) (ineq₂ (p≤q≤n .δqn) _) ε D E d .₁)) ⟩
-  Face-base n p (drop₃-2 p≤q≤n) ω (D .₁) (D .₂)
-    (Face-base (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D E d .₁) ∎
+              (Face (1+ n) (1+ q) (ineq₂ (p≤q≤n .δqn) _) ε D d .₁)) ⟩
+  Face n p (drop₃-2 p≤q≤n) ω (D .₁)
+    (Face (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D d .₁) ∎
 
+painting-≡ : ∀ n p (p≤n : [ p ≤ n ]₂)
+           → (D : νSet-< n) (E : νSet-= n D)
+           → (d d' : frame n p p≤n D .Dom)
+           → (c : painting n p p≤n D E d .Dom)
+           → (c' : painting n p p≤n D E d' .Dom) 
+           → (getPainting n p n (◆₃' p≤n) D E d c ≡ getPainting n p n (◆₃' p≤n) D E d' c')
+           → Σ-≡ (d , c) (d' , c')
+painting-≡ n p p≤n D E d d' c c' eq = helper p _ (◆₃' p≤n) refl d d' c c' (≡→Σ-≡ eq)
+ where
+  helper : ∀ p δ (p≤n≤n : [ p ≤ n ≤ n ]₃)
+         → δ ≡ p≤n≤n .δpq
+         → (d d' : frame n p (drop₃-2 p≤n≤n) D .Dom)
+         → (c : painting n p (drop₃-2 p≤n≤n) D E d .Dom)
+         → (c' : painting n p (drop₃-2 p≤n≤n) D E d' .Dom)
+         → (Σ-≡ (getPainting n p n p≤n≤n D E d c) (getPainting n p n p≤n≤n D E d' c'))
+         → Σ-≡ (d , c) (d' , c')
+  helper p zero (ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn) refl d d' c c' eq
+    with recover-nat-eq' p n Hpq | recover-nat-eq' δqn δpn Hpqn
+  ... | refl | refl = eq
+  helper p (1+ δ) (ineq₃ _ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) refl d d' (l , c) (l' , c') eq =
+    let 1+p≤q≤n = ineq₃ δ δpn δqn Hpq Hpn Hqn Hpqn in
+    Σ-≡-assoc (helper (1+ p) δ 1+p≤q≤n refl (d , l) (d' , l') c c' eq)
+
+frame-≡ : ∀ n p (p≤n : [ p ≤ 1+ n ]₂)
+        → (D : νSet-< (1+ n))
+        → (d d' : frame (1+ n) (1+ n) (◆₂ (1+ n)) D .Dom)
+        → (∀ p (p≤n : [ p ≤ n ]₂) (ε : arity) → Face n p p≤n ε D d ≡ Face n p p≤n ε D d')
+        → getFrame (1+ n) p (1+ n) (◆₃' p≤n) D d ≡ getFrame (1+ n) p (1+ n) (◆₃' p≤n) D d'
+frame-≡ n zero   p≤n D d d' f = refl
+frame-≡ n (1+ p) p≤n D d d' f = Σ-≡→≡ (frame-≡ n p (↓₂ p≤n) D d d' f , fe _ _ helper)
+  where
+    helper : ∀ ε → subst (λ - → layer (1+ n) p _ D - .Dom) (frame-≡ n p (↓₂ p≤n) D d d' f)
+                     (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂) ε
+                 ≡ getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d' .₂ ε
+    helper ε =
+      subst (λ - → layer (1+ n) p _ D - .Dom)
+        (frame-≡ n p (↓₂ p≤n) D d d' f)
+        (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂) ε
+        ≡⟨ subst-application (λ - → layer (1+ n) p _ _ - .Dom) (λ -₁ -₂ → -₂ ε)
+            (frame-≡ n p (↓₂ p≤n) D d d' f) ⟩⁻¹
+      subst (λ - → painting n p (⇓₂ p≤n) (D .₁) (D .₂) (restr-frame n p p _ ε D -) .Dom)
+         (frame-≡ n p (↓₂ p≤n) D d d' f)
+         (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂ ε)
+        ≡⟨ subst-∘ (frame-≡ n p (↓₂ p≤n) D d d' f) ⟩
+      subst (λ - → painting n p (⇓₂ p≤n) (D .₁) (D .₂) - .Dom)
+         (cong (restr-frame n p p _ ε D) (frame-≡ n p (↓₂ p≤n) D d d' f))
+         (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂ ε)
+        ≡⟨ cong (λ - → subst (λ - → painting n p (⇓₂ p≤n) (D .₁) (D .₂) - .Dom) -
+                         (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂ ε))
+           (frame n p (⇓₂ p≤n) (D .₁) .has-UIP _ _ _ _) ⟩
+      subst (λ - → painting n p (⇓₂ p≤n) (D .₁) (D .₂) - .Dom)
+       (painting-≡ n p (⇓₂ p≤n) (D .₁) (D .₂) _ _ _ _ (f p (⇓₂ p≤n) ε) .₁)
+       (getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d .₂ ε)
+        ≡⟨ painting-≡ n p (⇓₂ p≤n) (D .₁) (D .₂) _ _ _ _ (f p (⇓₂ p≤n) ε) .₂ ⟩
+      getFrame (1+ n) (1+ p) (1+ n) (◆₃' p≤n) D d' .₂ ε ∎
+
+Face-≡ : ∀ n (D : νSet-< (1+ n)) (d d' : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom)
+       → (∀ p (p≤n : [ p ≤ n ]₂) (ε : arity) → Face n p p≤n ε D d ≡ Face n p p≤n ε D d')
+       → d ≡ d'
+Face-≡ n D d d' eq = helper (frame-≡ n (1+ n) (◆₂ (1+ n)) D d d' eq)
+ where
+ helper : getFrame (1+ n) (1+ n) (1+ n) (◆₃' (◆₂ 1+ n)) D d
+        ≡ getFrame (1+ n) (1+ n) (1+ n) (◆₃' (◆₂ 1+ n)) D d'
+        → d ≡ d'
+ helper eq rewrite recover-nat-eq'-refl (1+ n) = eq
+
+{-
 X-aux : ∀ (k n : ℕ)
       → (D : νSet-< n) → νSet-> n D
       → HSet
@@ -244,7 +308,7 @@ Face-aux : ∀ (k n p : ℕ) → [ p ≤ k + n ]₂
          → X-aux (1+ k) n D νSet .Dom
          → X-aux k n D νSet .Dom
 Face-aux zero n p p≤k+n ε D νSet (d , c) =
- Face-base n p p≤k+n ε (D , νSet .this) (νSet .next .this) d
+ Face-base n p p≤k+n ε (D , νSet .this) d
 Face-aux (1+ k) n p p≤k+n ε D νSet X =
  Face-aux k (1+ n) p p≤k+n ε _ (νSet .next) X
 
@@ -257,21 +321,7 @@ Face-aux-coh : ∀ k n p q → (p≤q≤n : [ p ≤ q ≤ k + n ]₃)
              ≡ Face-aux k n p (drop₃-2 p≤q≤n) ω D νSet
                 (Face-aux (1+ k) n (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D νSet X )
 Face-aux-coh zero n p q p≤q≤n ε ω D νSet (d , c) =
- Face-base-coh n p q p≤q≤n ε ω _ (νSet .next .next .this)  d
+ Face-base-coh n p q p≤q≤n ε ω _ d
 Face-aux-coh (1+ k) n p q p≤q≤n ε ω D νSet X =
  Face-aux-coh k (1+ n) p q p≤q≤n ε ω _ (νSet .next) X
-
-module _ (νSet : νSet) where
-  X : ℕ → HSet
-  X n = X-aux n 0 tt νSet
-
-  Face : ∀ n p → [ p ≤ n ]₂ → arity
-       → X (1+ n) .Dom → X n .Dom
-  Face n p p≤n ε X = Face-aux n 0 p p≤n ε tt νSet X
-
-  Face-coh : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃) 
-           → (ε ω : arity)
-           → (X : X (2+ n) .Dom)
-           → Face n q (drop₃-1 p≤q≤n) ε (Face (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω X) 
-           ≡ Face n p (drop₃-2 p≤q≤n) ω (Face (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε X)
-  Face-coh n p q p≤q≤n ε ω X = Face-aux-coh n 0 p q p≤q≤n ε ω tt νSet X
+-}
