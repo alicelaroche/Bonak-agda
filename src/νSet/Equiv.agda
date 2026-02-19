@@ -24,19 +24,19 @@ open import νSet.Base fe fe-≡ arity
 
 νSet-≃ : (n : ℕ) (D D' : νSet-< n) → Type₁
 
-νSet-≃-frame : (n p : ℕ) → (p≤n : [ p ≤ n ]₂)
+νSet-≃-frame : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
              → {D D' : νSet-< n}
              → νSet-≃ n D D'
              → frame n p p≤n D .Dom ≃ frame n p p≤n D' .Dom
 
-νSet-≃-layer : (n p : ℕ) → (p≤n : [ 1+ p ≤ n ]₂)
+νSet-≃-layer : ∀ n p {δ} → (p≤n : [ 1+ p ≤ n ][ δ ]₂)
              → {D D' : νSet-< n}
              → (D-≈ : νSet-≃ n D D')
              → (d : frame n p (↓₂ p≤n) D .Dom)
              → layer n p p≤n D d .Dom
              ≃ layer n p p≤n D' (νSet-≃-frame n p (↓₂ p≤n) D-≈ .₁ d) .Dom
 
-νSet-≃-painting : (n p : ℕ) → (p≤n : [ p ≤ n ]₂)
+νSet-≃-painting : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
                 → {D D' : νSet-< n} {E : νSet-= n D} {E' : νSet-= n D'}
                 → (D-≈ : νSet-≃ n D D')
                 → (E-≈ : ∀ d → E d .Dom ≃ E' (νSet-≃-frame n n (◆₂ n) D-≈ .₁ d) .Dom)
@@ -49,7 +49,7 @@ open import νSet.Base fe fe-≡ arity
   Σ[ D-≃ ∈ νSet-≃ n D D' ]
     (∀ d → (E d .Dom) ≃ (E' (νSet-≃-frame n n (◆₂ n) D-≃ .₁ d) .Dom))
 
-νSet-≃-restr-frame : (n p q : ℕ) → (p≤q≤n : [ p ≤ q ≤ n ]₃)
+νSet-≃-restr-frame : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
                    → (ε : arity)
                    → {D D' : νSet-< (1+ n)}
                    → (D-≃ : νSet-≃ (1+ n) D D')
@@ -58,8 +58,8 @@ open import νSet.Base fe fe-≡ arity
                        (restr-frame n p q p≤q≤n ε D d)
                    ≡ restr-frame n p q p≤q≤n ε D'
                        (νSet-≃-frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D-≃ .₁ d)
-
-νSet-≃-restr-layer : (n p q : ℕ) → (p≤q≤n : [ 1+ p ≤ 1+ q ≤ n ]₃)
+                       
+νSet-≃-restr-layer : ∀ n p q {δ} → (p≤q≤n : [ 1+ p ≤ 1+ q ≤ n ][ δ ]₃)
                    → (ε : arity)
                    → {D D' : νSet-< (1+ n)}
                    → (D-≃ : νSet-≃ (1+ n) D D')
@@ -74,7 +74,7 @@ open import νSet.Base fe fe-≡ arity
                        (νSet-≃-frame (1+ n) p (↓₂ ↑₂ drop₃-2 p≤q≤n) D-≃ .₁ d)
                        (νSet-≃-layer (1+ n) p (↑₂ drop₃-2 p≤q≤n) D-≃ d .₁ l)
 
-νSet-≃-restr-painting : (n p q : ℕ) → (p≤q≤n : [ p ≤ q ≤ n ]₃)
+νSet-≃-restr-painting : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
                       → (ε : arity)
                       → {D D' : νSet-< (1+ n)} {E : νSet-= _ D} {E' : νSet-= _ D'}
                       → (D-≃ : νSet-≃ (1+ n) D D')
@@ -99,22 +99,13 @@ open import νSet.Base fe fe-≡ arity
              ∙≃ eq→isEquiv (cong (λ - → painting n p _ (D' .₁) (D' .₂) - .Dom)
                   (νSet-≃-restr-frame n p p _ ε (D-≃ , E-≃) d))
 
-νSet-≃-painting-h : (n p δ : ℕ) → (p≤n : [ p ≤ n ]₂)
-                  → δ ≡ p≤n .δpn
-                  → {D D' : νSet-< n} {E : νSet-= n D} {E' : νSet-= n D'}
-                  → (D-≈ : νSet-≃ n D D')
-                  → (E-≈ : ∀ d → E d .Dom ≃ E' (νSet-≃-frame n n (◆₂ n) D-≈ .₁ d) .Dom)
-                  → (d : frame n p p≤n D .Dom)
-                  → painting n p p≤n D E d .Dom
-                  ≃ painting n p p≤n D' E' (νSet-≃-frame n p p≤n D-≈ .₁ d) .Dom
-νSet-≃-painting-h n p zero (ineq₂ δpn Hpn) refl D-≃ E-≃ d
+νSet-≃-painting n p {zero} (ineq₂ Hpn) D-≃ E-≃ d
   with recover-nat-eq' p n Hpn
 ... | refl = E-≃ d
-νSet-≃-painting-h n p (1+ δ) (ineq₂ _ Hpn) refl D-≃ E-≃ d =
-   Σ-≃ (νSet-≃-layer n p (ineq₂ δ Hpn) _ d)
-       (λ l → νSet-≃-painting-h n (1+ p) δ _ refl D-≃ E-≃ (d , l))
+νSet-≃-painting n p {1+ δ} (ineq₂ Hpn) D-≃ E-≃ d =
+   Σ-≃ (νSet-≃-layer n p (ineq₂ Hpn) _ d)
+       (λ l → νSet-≃-painting n (1+ p) _ D-≃ E-≃ (d , l))
 
-νSet-≃-painting n p p≤n D-≃ E-≃ = νSet-≃-painting-h n p _ p≤n refl D-≃ E-≃ 
 
 νSet-≃-restr-frame n zero q p≤q≤n ε D-≃ d = refl
 νSet-≃-restr-frame n (1+ p) (1+ q) p≤q≤n ε {D} D-≃ (d , l) =
@@ -138,7 +129,7 @@ open import νSet.Base fe fe-≡ arity
      (νSet-≃-layer (1+ n) p (drop₃-2 p≤q≤n) (D-≃ .₁)
        (restr-frame (1+ n) p (1+ q) (↓₃ p≤q≤n) ε D d) .₁
        (restr-layer (1+ n) p q p≤q≤n ε D d l)) ω
-     ≡⟨ subst-application (λ - → layer (1+ n) p _ _ - .Dom) (λ -₁ -₂ → -₂ ω)
+     ≡⟨ subst-application (λ - → layer (1+ n) p (drop₃-2 p≤q≤n) _ - .Dom) (λ -₁ -₂ → -₂ ω)
           (νSet-≃-restr-frame (1+ n) p (1+ q) _ ε D-≃ d) ⟩⁻¹
    subst (λ - → painting n p _ _ _ (restr-frame n p p _ ω _ -) .Dom)
      (νSet-≃-restr-frame (1+ n) p (1+ q) _ ε D-≃ d) (
@@ -274,28 +265,14 @@ open import νSet.Base fe fe-≡ arity
    restr-layer (1+ n) p q p≤q≤n ε D'
       (νSet-≃-frame (2+ n) p (↓₂ ↑₂ drop₃-2 p≤q≤n) D-≃ .₁ d)
       (νSet-≃-layer (2+ n) p (↑₂ drop₃-2 p≤q≤n) D-≃ d .₁ l) ω ∎
-      
-νSet-≃-restr-painting n p q p≤q≤n ε {D} {D'} {E} {E'} D-≃ E-≃ d c =
- helper p q _ p≤q≤n refl d c
- where
- helper : ∀ p q δ → (p≤q≤n : [ p ≤ q ≤ n ]₃)      
-        → δ ≡ p≤q≤n .δpq
-        → (d : frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D .Dom)
-        → (c : painting (1+ n) p (↑₂ drop₃-2 p≤q≤n) D E d .Dom)
-        → subst (λ - → painting n p (drop₃-2 p≤q≤n) (D' .₁) (D' .₂) - .Dom)
-            (νSet-≃-restr-frame n p q p≤q≤n ε D-≃ d)
-            (νSet-≃-painting n p (drop₃-2 p≤q≤n) (D-≃ .₁) (D-≃ .₂)
-              (restr-frame n p q p≤q≤n ε _ d) .₁
-              (restr-painting n p q p≤q≤n ε _ _ d c))
-        ≡ restr-painting n p q p≤q≤n ε D' E'
-            (νSet-≃-frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D-≃ .₁ d)
-            (νSet-≃-painting (1+ n) p (↑₂ drop₃-2 p≤q≤n) D-≃ E-≃ d .₁ c)
- helper p q zero q≤q≤n@(ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn) refl d (l , c)
-   with recover-nat-eq' p q Hpq | recover-nat-eq' δqn δpn Hpqn
- ... | refl | refl = subst-∘ (νSet-≃-restr-frame n q q q≤q≤n ε D-≃ d) 
- helper p (1+ q) (1+ δ) p≤q≤n@(ineq₃ _ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) refl d (l , c) =
-  let 1+p≤q≤n = ineq₃ δ δpn δqn Hpq Hpn Hqn Hpqn in
-  let rec = helper (1+ p) (1+ q) δ 1+p≤q≤n refl (d , l) c in
+
+νSet-≃-restr-painting n p q {zero} q≤q≤n@(ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) ε D-≃ E-≃ d (l , c)
+  with recover-nat-eq' p q Hpq | recover-nat-eq' δqn δpn Hpqn
+... | refl | refl = subst-∘ (νSet-≃-restr-frame n q q q≤q≤n ε D-≃ d) 
+νSet-≃-restr-painting n p (1+ q) {1+ δ} p≤q≤n@(ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) ε
+ {D} {D'} {E} {E'} D-≃ E-≃  d (l , c) =
+  let 1+p≤q≤n = ineq₃ δpn δqn Hpq Hpn Hqn Hpqn in
+  let rec = νSet-≃-restr-painting n (1+ p) (1+ q) 1+p≤q≤n ε D-≃ E-≃ (d , l) c in
   subst (λ - → painting n p (drop₃-2 p≤q≤n) (D' .₁) (D' .₂) - .Dom)
     (νSet-≃-restr-frame n p (1+ q) p≤q≤n ε D-≃ d)
     (νSet-≃-painting n p (drop₃-2 p≤q≤n) (D-≃ .₁) (D-≃ .₂)

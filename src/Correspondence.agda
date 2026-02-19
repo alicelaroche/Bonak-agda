@@ -52,7 +52,7 @@ module _ (νSet : νSet) where
   X-aux zero   n D νSet = HΣ[ d ∈ frame n n (◆₂ n) D ] painting n n (◆₂ n) D (νSet .this) d
   X-aux (1+ k) n D νSet = X-aux k (1+ n) (D , (νSet .this)) (νSet .next)
 
-  Face-aux : ∀ (k n p : ℕ) → [ p ≤ k + n ]₂
+  Face-aux : ∀ k n p {δ} → [ p ≤ k + n ][ δ ]₂
            → arity
            → (D : νSet-< n) (νSet : νSet-> n D)
            → X-aux (1+ k) n D νSet .Dom
@@ -62,7 +62,7 @@ module _ (νSet : νSet) where
   Face-aux (1+ k) n p p≤k+n ε D νSet X =
     Face-aux k (1+ n) p p≤k+n ε _ (νSet .next) X
 
-  Face-aux-coh : ∀ k n p q → (p≤q≤n : [ p ≤ q ≤ k + n ]₃) 
+  Face-aux-coh : ∀ k n p q {δ} → (p≤q≤n : [ p ≤ q ≤ k + n ][ δ ]₃) 
                → (ε ω : arity)
                → (D : νSet-< n) (νSet : νSet-> n D)
                → (X : X-aux (2+ k) n D νSet .Dom)
@@ -78,11 +78,11 @@ module _ (νSet : νSet) where
   νSet-X : ℕ → HSet
   νSet-X n = X-aux n 0 tt νSet
 
-  νSet-Face : ∀ n p → [ p ≤ n ]₂ → arity
+  νSet-Face : ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity
             → νSet-X (1+ n) .Dom → νSet-X n .Dom
   νSet-Face n p p≤n ε X = Face-aux n 0 p p≤n ε tt νSet X
 
-  νSet-Face-coh : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃) 
+  νSet-Face-coh : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
                 → (ε ω : arity)
                 → (X : νSet-X (2+ n) .Dom)
                 → νSet-Face n q (drop₃-1 p≤q≤n) ε

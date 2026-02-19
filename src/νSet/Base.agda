@@ -38,34 +38,34 @@ coh₂ {A} {B} {b = b} refl refl refl refl refl H₂'' =
 νSet-< zero   = ⊤
 νSet-< (1+ n) = Σ[ R ∈ νSet-< n ] νSet-= n R
 
-frame : ∀ n p → (p≤n : [ p ≤ n ]₂)
+frame : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
       → (D : νSet-< n)
       → HSet
         
-layer : ∀ n p → (p≤n : [ 1+ p ≤ n ]₂)
+layer : ∀ n p {δ} → (p≤n : [ 1+ p ≤ n ][ δ ]₂)
       → (D : νSet-< n)
       → (d : frame n p (↓₂ p≤n) D .Dom)
       → HSet
 
-painting : ∀ n p → (p≤n : [ p ≤ n ]₂)
+painting : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
          → (D : νSet-< n) (E : νSet-= n D)
          → (d : frame n p p≤n D .Dom)
          → HSet
 
-restr-frame : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃)
+restr-frame : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
             → (ε : arity)
             → (D : νSet-< (1+ n))
             → (d : frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D .Dom)
             → frame n p (drop₃-2 p≤q≤n) (D .₁) .Dom
 
-restr-layer : ∀ n p q → (p≤q<n : [ 1+ p ≤ 1+ q ≤ n ]₃)
+restr-layer : ∀ n p q {δ} → (p≤q<n : [ 1+ p ≤ 1+ q ≤ n ][ δ ]₃)
             → (ε : arity)
             → (D : νSet-< (1+ n))
             → (d : frame (1+ n) p (↑₂ ↓₂ drop₃-2 p≤q<n) D .Dom)
             → (l : layer (1+ n) p (↑₂ drop₃-2 p≤q<n) D d .Dom)
             → layer n p (drop₃-2 p≤q<n) (D .₁) (restr-frame n p (1+ q) (↓₃ p≤q<n) ε D d) .Dom
 
-restr-painting : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃)
+restr-painting : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
                → (ε : arity)
                → (D : νSet-< (1+ n)) (E : νSet-= (1+ n) D)
                → (d : frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D .Dom)
@@ -73,7 +73,7 @@ restr-painting : ∀ n p q → (p≤q≤n : [ p ≤ q ≤ n ]₃)
                → painting n p (drop₃-2 p≤q≤n) (D .₁) (D .₂)
                   (restr-frame n p q p≤q≤n ε D d) .Dom
 
-coh-frame : ∀ n p q r → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ]₄)
+coh-frame : ∀ n p q r {δ} → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ][ δ ]₄)
           → (ε ω : arity)
           → (D : νSet-< (2+ n))
           → (d : frame (2+ n) p (↑₂ ↑₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) D .Dom)
@@ -82,7 +82,7 @@ coh-frame : ∀ n p q r → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ]₄)
           ≡ restr-frame n p r (drop₄-3 p≤r≤q≤n) ω (D .₁)
               (restr-frame (1+ n) p (1+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D d)
 
-coh-layer : ∀ n p q r → (p≤r≤q≤n : [ 1+ p ≤ 1+ r ≤ 1+ q ≤ n ]₄)
+coh-layer : ∀ n p q r {δ} → (p≤r≤q≤n : [ 1+ p ≤ 1+ r ≤ 1+ q ≤ n ][ δ ]₄)
           → (ε ω : arity)
           → (D : νSet-< (2+ n))
           → (d : frame (2+ n) p (↑₂ ↑₂ ↓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) D .Dom)
@@ -94,7 +94,7 @@ coh-layer : ∀ n p q r → (p≤r≤q≤n : [ 1+ p ≤ 1+ r ≤ 1+ q ≤ n ]₄
           ≡ restr-layer n p r (drop₄-3 p≤r≤q≤n) ω (D .₁) _
               (restr-layer (1+ n) p (1+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D d l)
 
-coh-painting : ∀ n p q r → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ]₄)
+coh-painting : ∀ n p q r {δ} → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ][ δ ]₄)
              → (ε ω : arity)
              → (D : νSet-< (2+ n)) (E : νSet-= (2+ n) D)  
              → (d : frame (2+ n) p (↑₂ ↑₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) D .Dom)
@@ -114,19 +114,14 @@ frame n (1+ p) p≤n D = HΣ[ d ∈ frame n p (↓₂ p≤n) D ] layer n p p≤n
 layer (1+ n) p p≤n D d =
  HΠ[ ε ∈ arity ] painting n p (⇓₂ p≤n) (D .₁) (D .₂) ( restr-frame n p p (◆₃ ⇓₂ p≤n) ε D d)
 
-I : ∀ n p δ (p≤n : [ p ≤ n ]₂)
-  → δ ≡ p≤n .δpn
-  → (D : νSet-< n) (E : νSet-= n D)
-  → frame n p p≤n D .Dom → HSet
-I n p zero (ineq₂ δpn Hpn) refl D E d = E (coe d)
+painting n p {zero} p≤n@(ineq₂ Hpn) D E d = E (coe d)
   where
-   coe : frame n p (ineq₂ zero Hpn) D .Dom → frame n n (◆₂ n) D .Dom
+   coe : frame n p p≤n D .Dom → frame n n (◆₂ n) D .Dom
    coe d with recover-nat-eq' p n Hpn
    ... | refl = d
-I n p (1+ δ) (ineq₂ _ Hpn) refl D E d =
-  let 1+p≤n = ineq₂ δ Hpn in 
-  HΣ[ l ∈ layer n p 1+p≤n D d ] I n (1+ p) δ 1+p≤n refl D E (d , l)
-painting n p p≤n D E = I n p (p≤n .δpn) p≤n refl D E
+painting n p {1+ δ} (ineq₂ Hpn) D E d =
+  let 1+p≤n = ineq₂ Hpn in 
+  HΣ[ l ∈ layer n p 1+p≤n D d ] painting n (1+ p) {δ} 1+p≤n D E (d , l)
 
 restr-frame n zero q p≤q≤n ε D d   = tt
 restr-frame n (1+ p) (1+ q) p≤q≤n ε D (d , l) =
@@ -138,22 +133,13 @@ restr-layer (1+ n) p q p≤q≤n ε (D , E) d l ω =
     (coh-frame n p q p (◆₄ ⇓₃ p≤q≤n) ε ω (D , E) d)
     (restr-painting n p q (⇓₃ p≤q≤n) ε D E _ (l ω))
 
-II : ∀ n p q δ → (p≤q≤n : [ p ≤ q ≤ n ]₃)
-   → δ ≡ p≤q≤n .δpq
-   → (ε : arity)
-   → (D : νSet-< (1+ n)) (E : νSet-= (1+ n) D)
-   → (d : frame (1+ n) p (↑₂ drop₃-2 p≤q≤n) D .Dom)
-   → (c : painting (1+ n) p (↑₂ drop₃-2 p≤q≤n) D E d .Dom)
-   → painting n p (drop₃-2 p≤q≤n) (D .₁) (D .₂)
-       (restr-frame n p q p≤q≤n ε D d) .Dom
-II n p q zero (ineq₃ δpq δpn δqn Hpq Hpn Hqn Hpqn) refl ε D E d (l , c)
+restr-painting n p q {zero} (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) ε D E d (l , c)
  with recover-nat-eq' p q Hpq | recover-nat-eq' δqn δpn Hpqn
 ... | refl | refl = l ε
-II n p (1+ q) (1+ δ) p≤q≤n@(ineq₃ _ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) refl ε D E d (l , c) =
-    let 1+p≤q≤n = ineq₃ δ δpn δqn Hpq Hpn Hqn Hpqn in
-    (restr-layer n p q 1+p≤q≤n ε D _ l) , II n (1+ p) (1+ q) δ 1+p≤q≤n refl ε D E (d , l) c
-
-restr-painting n p q p≤q≤n = II n p q _ p≤q≤n refl
+restr-painting n p (1+ q) {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) ε D E d (l , c) =
+    let 1+p≤q≤n = (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) in
+    (restr-layer n p q 1+p≤q≤n ε D _ l) ,
+    (restr-painting n (1+ p) (1+ q) {δ} 1+p≤q≤n ε D E (d , l) c)
 
 coh-frame n zero q r p≤r≤q≤n ε ω D d = refl
 coh-frame n (1+ p) (1+ q) (1+ r) p≤r≤q≤n ε ω D (d , l) =
@@ -174,7 +160,7 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
      (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d) (
    restr-layer (1+ n) p q (drop₄-2 p≤r≤q≤n) ε (D .₁) _
      (restr-layer (2+ n) p r (↑₃ drop₄-3 p≤r≤q≤n) ω D d l)) θ
-     ≡⟨ subst-application (λ - → layer (1+ n) p _ _ - .Dom) (λ -₁ -₂ → -₂ θ)
+     ≡⟨ subst-application (λ - → layer (1+ n) p (drop₃-2 (drop₄-2 p≤r≤q≤n)) _ - .Dom) (λ -₁ -₂ → -₂ θ)
            (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d) ⟩⁻¹
    subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂)
                    (restr-frame n p p (◆₃ ⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) θ (D .₁ .₁) -) .Dom)
@@ -284,25 +270,13 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
    restr-layer (1+ n) p r (drop₄-3 p≤r≤q≤n) ω (D .₁) _
       (restr-layer (2+ n) p (1+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D d l) θ ∎
 
-III : ∀ n p q r δ → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ]₄)
-    → δ ≡ p≤r≤q≤n .δpr
-    → (ε ω : arity)
-    → (D : νSet-< (2+ n)) (E : νSet-= (2+ n) D)  
-    → (d : frame (2+ n) p (↑₂ ↑₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) D .Dom)
-    → (c : painting (2+ n) p (↑₂ ↑₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) D E d .Dom)
-    → subst (λ - → painting n p (drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁) (D .₁ .₂) - .Dom)
-        (coh-frame n p q r p≤r≤q≤n ε ω D d)
-        (restr-painting n p q (drop₄-2 p≤r≤q≤n) ε (D .₁) (D .₂) _
-            (restr-painting (1+ n) p r (↑₃ drop₄-3 p≤r≤q≤n) ω D E d c))
-    ≡ restr-painting n p r (drop₄-3 p≤r≤q≤n) ω (D .₁) (D .₂) _
-        (restr-painting (1+ n) p (1+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D E d c)
-III n p q r zero (ineq₄ δpr δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn) refl ε ω D E d c
+coh-painting n p q r {zero} (ineq₄ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn) ε ω D E d c
   with recover-nat-eq' p r Hpr | recover-nat-eq' δrq δpq Hprq | recover-nat-eq' δrn δpn Hprn
 ... | refl | refl | refl = refl
-III n p (1+ q) (1+ r) (1+ δ) p≤r≤q≤n@(ineq₄ _ (1+ δpq) (1+ δpn) δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn)
- refl ε ω D E d (l , c) =
-   let 1+p≤r≤q≤n = ineq₄ δ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn in
-   let rec = III n (1+ p) (1+ q) (1+ r) δ 1+p≤r≤q≤n refl ε ω D E (d , l) c in
+coh-painting n p (1+ q) (1+ r) {1+ δ} p≤r≤q≤n@(ineq₄ (1+ δpq) (1+ δpn) δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn)
+   ε ω D E d (l , c) =
+   let 1+p≤r≤q≤n = ineq₄ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn in
+   let rec = coh-painting n (1+ p) (1+ q) (1+ r) {δ} 1+p≤r≤q≤n ε ω D E (d , l) c in
    subst (λ - → painting n p (drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁) (D .₁ .₂) - .Dom)
      (coh-frame n p (1+ q) (1+ r) p≤r≤q≤n ε ω D d)
      (restr-painting n p (1+ q) (drop₄-2 p≤r≤q≤n) ε (D .₁) (D .₂) _
@@ -329,7 +303,6 @@ III n p (1+ q) (1+ r) (1+ δ) p≤r≤q≤n@(ineq₄ _ (1+ δpq) (1+ δpn) δrq 
      ≡⟨ Σ-≡→≡ (refl , rec) ⟩
    restr-painting n p (1+ r) (drop₄-3 p≤r≤q≤n) ω (D .₁) (D .₂) _
       (restr-painting (1+ n) p (2+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D E d (l , c)) ∎
-coh-painting n p q r p≤r≤q≤n = III n p q r _ p≤r≤q≤n refl
 
 record νSet-> (n : ℕ) (D : νSet-< n) : Type₁ where
  coinductive
