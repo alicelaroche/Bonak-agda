@@ -1,17 +1,15 @@
 open import Prelude
+open import Axioms.FunExt
+open import Axioms.Univalence
 
 module νSet
-  (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-      → (f g : (a : A) → B a)
-      → (∀ a → f a ≡ g a)
-      → f ≡ g)
-  (fe-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-        → (f g : (a : A) → B a)
-        → (p : f ≡ g)
-        → fe f g (λ a → cong-app p a) ≡ p)
+  (fe : FunExt-Axiom)
+  (ua : Univalence-Axiom)  
   (arity : Type)
   where
 
-open import νSet.Base fe fe-≡ arity public
-open import νSet.Equiv fe fe-≡ arity public
-open import νSet.Face fe fe-≡ arity renaming (Face to νFace; Face-coh to νFace-coh) public
+open import νSet.Base fe arity using
+  ( Ctx; fullframe; []; _∷_; TotalSpace
+  ; νSet->; this; next; νSet) public
+open import νSet.Face fe arity using (νFace; νFace-coh; νFace-≡) public
+open import νSet.Bisim fe ua arity public

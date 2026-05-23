@@ -1,23 +1,18 @@
 {-# OPTIONS --termination-depth=3 #-}
 
 open import Prelude
+open import Axioms.FunExt
 
 module νSet.Base
-  (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-      → (f g : (a : A) → B a)
-      → (∀ a → f a ≡ g a)
-      → f ≡ g)
-  (fe-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-        → (f g : (a : A) → B a)
-        → (p : f ≡ g)
-        → fe f g (λ a → cong-app p a) ≡ p)
+  (fe : FunExt-Axiom)
   (arity : Type)
  where
 
 open import HSet
 open import Inequalities
 
-open HΠ fe fe-≡
+open HSet-FE fe
+open FE fe
 
 coh₂ : ∀ {A : HSet} {B : A .Dom → Type}
      → {a a₁ a₁' a₂ a₂' a' : A .Dom} {b : B a}
@@ -41,7 +36,7 @@ coh₂ {A} {B} {b = b} refl refl refl refl refl H₂'' =
 frame : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
       → (D : νSet-< n)
       → HSet
-        
+         
 layer : ∀ n p {δ} → (p≤n : [ 1+ p ≤ n ][ δ ]₂)
       → (D : νSet-< n)
       → (d : frame n p (↓₂ p≤n) D .Dom)
@@ -114,11 +109,8 @@ frame n (1+ p) p≤n D = HΣ[ d ∈ frame n p (↓₂ p≤n) D ] layer n p p≤n
 layer (1+ n) p p≤n D d =
  HΠ[ ε ∈ arity ] painting n p (⇓₂ p≤n) (D .₁) (D .₂) ( restr-frame n p p (◆₃ ⇓₂ p≤n) ε D d)
 
-painting n p {zero} p≤n@(ineq₂ Hpn) D E d = E (coe d)
-  where
-   coe : frame n p p≤n D .Dom → frame n n (◆₂ n) D .Dom
-   coe d with recover-nat-eq' p n Hpn
-   ... | refl = d
+painting n p {zero} (ineq₂ Hpn) D E d with recover-nat-eq p n Hpn
+... | refl = E d
 painting n p {1+ δ} (ineq₂ Hpn) D E d =
   let 1+p≤n = ineq₂ Hpn in 
   HΣ[ l ∈ layer n p 1+p≤n D d ] painting n (1+ p) {δ} 1+p≤n D E (d , l)
@@ -134,7 +126,7 @@ restr-layer (1+ n) p q p≤q≤n ε (D , E) d l ω =
     (restr-painting n p q (⇓₃ p≤q≤n) ε D E _ (l ω))
 
 restr-painting n p q {zero} (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) ε D E d (l , c)
- with recover-nat-eq' p q Hpq | recover-nat-eq' δqn δpn Hpqn
+ with recover-nat-eq p q Hpq | recover-nat-eq δqn δpn Hpqn
 ... | refl | refl = l ε
 restr-painting n p (1+ q) {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) ε D E d (l , c) =
     let 1+p≤q≤n = (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) in
@@ -146,7 +138,7 @@ coh-frame n (1+ p) (1+ q) (1+ r) p≤r≤q≤n ε ω D (d , l) =
   Σ-≡→≡ (coh-frame n p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d ,
          coh-layer n p q r p≤r≤q≤n ε ω D d l)
 
-coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
+coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = funExt (λ θ → helper θ)
  where
   helper : (θ : arity)
          → subst (λ - → layer (1+ n) p (drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁) - .Dom)
@@ -167,7 +159,7 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
          (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d) (
    restr-layer (1+ n) p q (drop₄-2 p≤r≤q≤n) ε (D .₁) _
      (restr-layer (2+ n) p r (↑₃ drop₄-3 p≤r≤q≤n) ω D d l) θ)
-     ≡⟨ subst-∘ (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d) ⟩
+     ≡⟨ subst-∘ (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d) _ ⟩
    subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
       (cong (restr-frame n p p (◆₃ ⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) θ (D .₁ .₁))
          (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d)) (
@@ -199,7 +191,7 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
                     subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
                       (coh-frame n p q p (◆₄ (⇓₃ drop₄-2 p≤r≤q≤n)) ε θ (D .₁)
                         (restr-frame (2+ n) p (1+ r) (↓₃ ↑₃ drop₄-3 p≤r≤q≤n) ω D d)) -))
-        (subst-∘ (coh-frame (1+ n) p r p ((◆₄ (↓₃' drop₄-3 p≤r≤q≤n))) ω θ D d)) ⟩
+        (subst-∘ (coh-frame (1+ n) p r p ((◆₄ (↓₃' drop₄-3 p≤r≤q≤n))) ω θ D d) _) ⟩
    subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
      (cong (restr-frame n p p (◆₃ ⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) θ (D .₁ .₁))
         (coh-frame (1+ n) p (1+ q) (1+ r) (↓₄ p≤r≤q≤n) ε ω D d)) (
@@ -253,7 +245,7 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
      ≡⟨ cong (subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
                (coh-frame n p r p (◆₄ (⇓₃ (drop₄-3 p≤r≤q≤n))) ω θ (D .₁ .₁ , D .₁ .₂)
                  (restr-frame (2+ n) p (2+ q) (↓₃ ↑₃' (drop₄-2 p≤r≤q≤n)) ε D d)))
-        (subst-∘ (coh-frame (1+ n) p (1+ q) p (◆₄ (↓₃ (drop₄-2 p≤r≤q≤n))) ε θ _ d)) ⟩⁻¹
+        (subst-∘ (coh-frame (1+ n) p (1+ q) p (◆₄ (↓₃ (drop₄-2 p≤r≤q≤n))) ε θ _ d) _) ⟩⁻¹
    subst (λ - → painting n p (⇓₂ drop₃-2 (drop₄-2 p≤r≤q≤n)) (D .₁ .₁ .₁) (D .₁ .₁ .₂) - .Dom)
      (coh-frame n p r p (◆₄ (⇓₃ (drop₄-3 p≤r≤q≤n))) ω θ (D .₁)
          (restr-frame (2+ n) p (2+ q) (↓₃ ↑₃' (drop₄-2 p≤r≤q≤n)) ε D d)) (
@@ -271,7 +263,7 @@ coh-layer (1+ n) p q r p≤r≤q≤n ε ω D d l = fe _ _ (λ θ → helper θ)
       (restr-layer (2+ n) p (1+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D d l) θ ∎
 
 coh-painting n p q r {zero} (ineq₄ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn) ε ω D E d c
-  with recover-nat-eq' p r Hpr | recover-nat-eq' δrq δpq Hprq | recover-nat-eq' δrn δpn Hprn
+  with recover-nat-eq p r Hpr | recover-nat-eq δrq δpq Hprq | recover-nat-eq δrn δpn Hprn
 ... | refl | refl | refl = refl
 coh-painting n p (1+ q) (1+ r) {1+ δ} p≤r≤q≤n@(ineq₄ (1+ δpq) (1+ δpn) δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn)
    ε ω D E d (l , c) =
@@ -304,12 +296,31 @@ coh-painting n p (1+ q) (1+ r) {1+ δ} p≤r≤q≤n@(ineq₄ (1+ δpq) (1+ δpn
    restr-painting n p (1+ r) (drop₄-3 p≤r≤q≤n) ω (D .₁) (D .₂) _
       (restr-painting (1+ n) p (2+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D E d (l , c)) ∎
 
-record νSet-> (n : ℕ) (D : νSet-< n) : Type₁ where
- coinductive
- field
-   this : νSet-= n D
-   next : νSet-> (1+ n) (D , this)
+opaque
+  Ctx : (n : ℕ) → Type₁
+  Ctx = νSet-<
+
+  fullframe : {n : ℕ} (D : Ctx n) → HSet
+  fullframe {n} D = frame n n (◆₂ n) D
+
+  [] : Ctx 0
+  [] = tt
+  
+  _∷_ : ∀ {n} → (D : Ctx n) → (fullframe D .Dom → HSet) → Ctx (1+ n)
+  _∷_ D E = D , E
+
+infixl 4 _∷_
+
+TotalSpace : ∀ {n} → (D : Ctx n) → (fullframe D .Dom → HSet) → HSet
+TotalSpace D E = HΣ[ d ∈ fullframe D ] E d
+
+record νSet-> (n : ℕ) (D : Ctx n) : Type₁ where
+  coinductive
+  field
+   this : fullframe D .Dom → HSet
+   next : νSet-> (1+ n) (D ∷ this)
+
 open νSet-> public
 
 νSet : Type₁
-νSet = νSet-> 0 tt
+νSet = νSet-> 0 []

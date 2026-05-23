@@ -1,6 +1,6 @@
 module Prelude where
 
-open import Agda.Primitive renaming (Set to Type) public
+open import Agda.Primitive renaming (Set to Type; Setω to Typeω) public
 
 id : ∀ {ℓ} {A : Type ℓ} → A → A
 id x = x
@@ -18,44 +18,49 @@ data _≡_ {ℓ} {A : Type ℓ} (x : A) : A → Type ℓ where
 {-# BUILTIN EQUALITY _≡_  #-}
 {-# BUILTIN REWRITE _≡_  #-}
 
-module _ {ℓ} {A : Type ℓ} where
-  infixr 2 step-≡ step-≡⁻¹ _≡⟨⟩_
-  infix  3 _∎
-
-  step-≡ : (x : A) {y z : A} → y ≡ z → x ≡ y → x ≡ z
-  step-≡ _ p refl = p
-
-  step-≡⁻¹ : (x : A) {y z : A} → y ≡ z → y ≡ x → x ≡ z
-  step-≡⁻¹ _ p refl = p
-
-  syntax step-≡ x y p   = x ≡⟨ p ⟩ y
-  syntax step-≡⁻¹ x y p = x ≡⟨ p ⟩⁻¹ y
-
-  _≡⟨⟩_ : (x : A) {y : A} → x ≡ y → x ≡ y
-  _ ≡⟨⟩ p = p
-
-  _∎ : (x : A) → x ≡ x
-  _ ∎ = refl
-
 sym : ∀ {ℓ} {A : Type ℓ} {a a' : A} → a ≡ a' → a' ≡ a
 sym refl = refl
 
 trans : ∀ {ℓ} {A : Type ℓ} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 trans refl q = q
 
-infixr 30 _∙_
+trans' : ∀ {ℓ} {A : Type ℓ} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+trans' p refl = p
+
+infixr 30 _∙_ _∙'_
 _∙_ = trans
+_∙'_ = trans'
+
+infixr 9 _∘_
+_∘_ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {C : (a : A) → B a → Type ℓ''}
+    → (g : {a : A} → (b : B a) → C a b)
+    → (f : (a : A) → B a)
+    → (a : A)→ C a (f a)
+g ∘ f = λ x → g (f x)
+{-# INLINE _∘_ #-}
 
 cong : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A} → (f : A → B)
      → a ≡ a' → f a ≡ f a'
 cong f refl = refl
 
-cong-app : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : (a : A) → B a}
+happly : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : (a : A) → B a}
          → f ≡ g → (a : A) → f a ≡ g a
-cong-app refl a = refl
+happly refl a = refl
+
+happly-impl : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : {a : A} → B a}
+            → (λ {x} → f {x}) ≡ (λ {x} → g {x})  → (a : A) → f {a} ≡ g {a}
+happly-impl refl a = refl
 
 subst : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → Type ℓ') {a a' : A} → a ≡ a' → B a → B a'
 subst B refl b = b
+
+dsubst : ∀ {ℓ ℓ' ℓ''} {X : Type ℓ}
+       → (A : X -> Type ℓ') (B : (x : X) → A x → Type ℓ'')
+       → {x y : X} {a : A x}
+       → (p : x ≡ y)
+       → B x a
+       → B y (subst A p a)
+dsubst A B refl b = b
 
 transport : ∀ {ℓ} {A B : Type ℓ} → A ≡ B → A → B
 transport = subst (λ x → x) 
@@ -64,22 +69,22 @@ dcong : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} (f : (x : A) → B x) 
       → (p : x ≡ y) → subst B p (f x) ≡ f y
 dcong f refl = refl
 
-cong₂ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ'} {a a' : A} {b : B a}
+cong₂ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ''} {a a' : A} {b : B a}
       → (f : (a : A) → B a → C)
       → (p : a ≡ a') → f a b ≡ f a' (subst B p b)
 cong₂ f refl = refl
 
 trans-assoc : ∀ {ℓ} {A : Type ℓ} {x y z w : A}
             → (p : x ≡ y) (q : y ≡ z) (r : z ≡ w)
-            → (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+            → trans (trans p q) r ≡ trans p (trans q  r)
 trans-assoc refl q r = refl
 
 trans-identity-l : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
-                 → refl ∙ p ≡ p
+                 → trans refl p ≡ p
 trans-identity-l H = refl
 
 trans-identity-r : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
-                 → p ∙ refl ≡ p
+                 → trans p refl ≡ p
 trans-identity-r refl = refl
 
 trans-sym-l : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
@@ -90,21 +95,62 @@ trans-sym-r : ∀ {ℓ} {A : Type ℓ} {a a' : A} (p : a ≡ a')
             → p ∙ (sym p) ≡ refl
 trans-sym-r refl = refl
 
+subst-dup : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → A → Type ℓ') {a a' : A}
+            → (p : a ≡ a') (b : B a a)
+            → subst (λ - → B - -) p b
+            ≡ subst (λ - → B - a') p (subst (B a) p b)
+subst-dup B refl b = refl
+
+subst-const : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A}
+            → (p : a ≡ a') (b : B)
+            → subst (λ - → B) p b ≡ b
+subst-const refl b = refl
+
+subst-sym-l' : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
+            → (p : a ≡ a')
+            → subst B (sym p) ∘ subst B p ≡ id
+subst-sym-l' refl = refl
+
+subst-sym-r' : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
+            → (p : a ≡ a') 
+            → subst B p ∘ subst B (sym p) ≡ id
+subst-sym-r' refl = refl
+
 subst-sym-l : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
             → (p : a ≡ a') (b : B a)
             → subst B (sym p) (subst B p b) ≡ b
-subst-sym-l refl b = refl
+subst-sym-l p = happly (subst-sym-l' p)
 
 subst-sym-r : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A}
             → (p : a ≡ a') (b : B a')
             → subst B p (subst B (sym p) b) ≡ b
-subst-sym-r refl b = refl
+subst-sym-r p = happly (subst-sym-r' p)
+
+subst-paths-l : ∀ {ℓ} {A : Type ℓ} {x y y' : A} (p : x ≡ y) (q : y ≡ y')
+              → subst (λ y → x ≡ y) q p ≡ p ∙ q
+subst-paths-l p refl = sym (trans-identity-r p)
 
 subst-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {x y : A} {C : B → Type ℓ''}
         → {f : A → B}
-        → (x≡y : x ≡ y) {p : C (f x)}
-        → subst (λ - → C (f -)) x≡y p ≡ subst C (cong f x≡y) p
-subst-∘ refl = refl
+        → (x≡y : x ≡ y) (c : C (f x))
+        → subst (λ - → C (f -)) x≡y c ≡ subst C (cong f x≡y) c
+subst-∘ refl c = refl
+
+subst-∘' : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {x : A} {C : B x → Type ℓ''}
+          → {f g : (a : A) → B a}
+          → (f≡g : f ≡ g) (c : C (f x))
+          → subst (λ - → C (- x)) f≡g c ≡ subst C (happly f≡g x) c
+subst-∘' refl c = refl
+
+subst-fun-r : ∀ {ℓ ℓ'} {A : Type ℓ} {B B' : Type ℓ'}
+            → (p : B ≡ B') (f : A → B)
+            → subst (λ X → A → X) p f ≡ transport p ∘ f
+subst-fun-r refl f = refl
+
+subst-fun-l : ∀ {ℓ ℓ'} {A A' : Type ℓ} {B : Type ℓ'}
+            → (p : A ≡ A') (f : A → B)
+            → subst (λ X → X → B) p f ≡ f ∘ transport (sym p)
+subst-fun-l refl f = refl
 
 subst-application : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ}
                   → (B₁ : A → Type ℓ') {B₂ : A → Type ℓ''}
@@ -116,11 +162,45 @@ subst-application _ _ refl = refl
 cong-id : ∀ {ℓ} {A : Type ℓ} {a a' : A} → (p : a ≡ a') → cong id p ≡ p
 cong-id refl = refl
 
+
 cong-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''}
        → {a a' : A} → (f : A → B) → (g : B → C)
        → (p : a ≡ a')
        → cong g (cong f p) ≡ cong (λ - → g (f -)) p
 cong-∘ f g refl = refl
+
+cong-∙ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'}
+       → {a a' a'' : A} → (f : A → B)
+       → (p : a ≡ a') (q : a' ≡ a'')
+       → cong f (p ∙ q) ≡ cong f p ∙ cong f q
+cong-∙ f refl q = refl
+
+cong-sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A}
+         → (f : A → B) (p : a ≡ a')
+         → sym (cong f p) ≡ cong f (sym p)
+cong-sym f refl = refl
+
+J : ∀ {ℓ ℓ'} {A : Type ℓ} {x : A} (P : (y : A) → x ≡ y → Type ℓ') → P x refl → {y : A} (p : x ≡ y) → P y p
+J P p refl = p
+
+module _ {ℓ} {A : Type ℓ} where
+  infixr 2 step-≡ step-≡⁻¹ _≡⟨⟩_
+  infix  3 _∎
+
+  step-≡ : (x : A) {y z : A} → y ≡ z → x ≡ y → x ≡ z
+  step-≡ x p q = trans q p
+
+  step-≡⁻¹ : (x : A) {y z : A} → y ≡ z → y ≡ x → x ≡ z
+  step-≡⁻¹ x p q = trans (sym q) p
+
+  syntax step-≡ x y p   = x ≡⟨ p ⟩ y
+  syntax step-≡⁻¹ x y p = x ≡⟨ p ⟩⁻¹ y
+
+  _≡⟨⟩_ : (x : A) {y : A} → x ≡ y → x ≡ y
+  _ ≡⟨⟩ p = p
+
+  _∎ : (x : A) → x ≡ x
+  _ ∎ = refl
 
 record Σ {ℓ ℓ'} (A : Type ℓ) (B : A → Type ℓ') : Type (ℓ ⊔ ℓ') where
   constructor _,_ 
@@ -152,7 +232,7 @@ _×_ A B = Σ A (λ _ → B)
 
 Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
       → {x y : Σ A B} → Σ-≡ x y → x ≡ y
-Σ-≡→≡  (refl , refl) = refl 
+Σ-≡→≡  (refl , refl) = refl
 
 ≡→Σ-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
       → {x y : Σ A B} → x ≡ y → Σ-≡ x y
@@ -162,22 +242,25 @@ _×_ A B = Σ A (λ _ → B)
         → {x y : Σ A B} → (p : x ≡ y) → p ≡ Σ-≡→≡ (≡→Σ-≡ p)
 ≡→Σ-≡→≡ refl = refl
 
-subst-Σ : {X : Set} {A : X → Set} {B : Σ[ x ∈ X ] A x → Set} {x₁ x₂ : X} {a : A x₁} {b : B (x₁ , a)}
+subst-Σ : ∀ {ℓ ℓ' ℓ''} {X : Set ℓ} {A : X → Set ℓ'} {B : Σ[ x ∈ X ] A x → Set ℓ''}
+        → {x₁ x₂ : X} {a : A x₁} {b : B (x₁ , a)}
         → (p : x₁ ≡ x₂)
         → subst (λ - → Σ[ a ∈ A - ] (B (- , a))) p (a , b)
         ≡ (subst A p a , subst B (Σ-≡→≡ (p , refl)) b)
 subst-Σ refl = refl
 
-subst-Σ' : {X : Set} {A : X → Set} {B : Σ[ x ∈ X ] A x → Set} {x₁ x₂ : X} {a : A x₁} {a' : A x₂} {b : B (x₁ , a)}
-     → (p : x₁ ≡ x₂)
-     → (q : subst (λ x → A x) p a ≡ a')
-     → subst (λ - → B (x₂ , -)) q (subst B (Σ-≡→≡ (p , refl)) b)
-     ≡ subst B (Σ-≡→≡ (p , q)) b
+subst-Σ' : ∀ {ℓ ℓ' ℓ''} {X : Set ℓ} {A : X → Set ℓ'} {B : Σ[ x ∈ X ] A x → Set ℓ''}
+         → {x₁ x₂ : X} {a : A x₁} {a' : A x₂} {b : B (x₁ , a)}
+         → (p : x₁ ≡ x₂)
+         → (q : subst (λ x → A x) p a ≡ a')
+         → subst (λ - → B (x₂ , -)) q (subst B (Σ-≡→≡ (p , refl)) b)
+         ≡ subst B (Σ-≡→≡ (p , q)) b
 subst-Σ' p refl = refl
 
 data _⊎_ {ℓ} {ℓ'} (A : Type ℓ) (B : Type ℓ') : Type (ℓ ⊔ ℓ') where
   inl : A → A ⊎ B
   inr : B → A ⊎ B
+
 
 data ℕ : Type where
   zero : ℕ
@@ -197,14 +280,6 @@ pred : ℕ → ℕ
 pred zero = zero
 pred (suc n) = n
 
-nat-dec-eq : ∀ {n m : ℕ} → (n ≡ m) ⊎ (n ≡ m → ⊥)
-nat-dec-eq {zero} {zero} = inl refl
-nat-dec-eq {zero} {suc m} = inr λ ()
-nat-dec-eq {suc n} {zero} = inr λ ()
-nat-dec-eq {suc n} {suc m} with nat-dec-eq {n} {m}
-... | inl eq  = inl (cong suc eq)
-... | inr ¬eq = inr λ eq → ¬eq (cong pred eq)
-
 +-zero-r : ∀ {n} → n + 0 ≡ n
 +-zero-r {zero}  = refl
 +-zero-r {suc n} = cong suc +-zero-r
@@ -222,33 +297,10 @@ nat-dec-eq {suc n} {suc m} with nat-dec-eq {n} {m}
 +-suc-suc : ∀ n m → suc n + suc m ≡ suc (suc (n + m))
 +-suc-suc n m = cong suc +-suc-r
 
-+-comm : ∀ n m → n + m ≡ m + n
-+-comm n zero = +-zero-r
-+-comm n (1+ m) = trans +-suc-r (cong suc (+-comm n m))
-
-{-# REWRITE +-zero-r +-suc-r +-suc-zero +-zero-suc +-suc-suc #-}
++-assoc : ∀ n m o → n + m + o ≡ n + (m + o)
++-assoc zero m o = refl
++-assoc (1+ n) m o = cong suc (+-assoc n m o)
 
 infixl 20 _+_
 
-data _≤_ : ℕ → ℕ → Type where
-  0≤n : ∀ {n} → 0 ≤ n
-  s≤s : ∀ {n m} → n ≤ m → suc n ≤ suc m
-
-◆_ : ∀ n → n ≤ n
-◆ zero = 0≤n
-◆ 1+ n = s≤s (◆ n)
-
-↑_ : ∀ {n m} → n ≤ m → n ≤ suc m
-↑ 0≤n = 0≤n
-↑ s≤s n≤m = s≤s (↑ n≤m)
-
-↑[_]_ : ∀ {n m} → (k : ℕ) → n ≤ m → n ≤ (m + k)
-↑[ k ] 0≤n = 0≤n
-↑[ k ] s≤s m≤n = s≤s (↑[ k ] m≤n)
-
-↓↓_ : ∀ {n m} → suc n ≤ suc m → n ≤ m
-↓↓ s≤s n≤m = n≤m
-
-_↕_ : ∀ {n m p} → n ≤ m → m ≤ p → n ≤ p
-0≤n ↕ m≤p = 0≤n
-s≤s n≤m ↕ s≤s m≤p = s≤s (n≤m ↕ m≤p)
+{-# REWRITE +-zero-r +-suc-r #-}

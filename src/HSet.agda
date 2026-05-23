@@ -61,23 +61,6 @@ record HSet : Type₁ where
 
 open HSet public
 
-module _
- (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-     → (f g : (a : A) → B a)
-     → (∀ a → f a ≡ g a)
-     → f ≡ g)
- where
-
-  UIP-isProp : ∀ {ℓ} {A : Type ℓ}
-             → isProp (UIP A)
-  UIP-isProp x y =
-   fe x y λ a → fe _ _ λ a' → fe _ _ λ p → fe _ _ λ q →
-     (isProp→UIP (x a a') p q (x a a' p q) (y a a' p q))
-
-  HSet-≡ : (A B : HSet) → A .Dom ≡ B .Dom → A ≡ B
-  HSet-≡ (hset A has-UIP) (hset .A has-UIP') refl =
-    cong (hset A) (UIP-isProp has-UIP has-UIP')
-
 HUnit : HSet
 HUnit .Dom = ⊤
 HUnit .has-UIP _ _ refl refl = refl
@@ -96,26 +79,45 @@ H≡ A x y .has-UIP = isProp→UIP (A .has-UIP x y)
 infix 2 HΣ-syntax
 syntax HΣ-syntax A (λ x → B) = HΣ[ x ∈ A ] B
 
-module HΠ
- (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-     → (f g : (a : A) → B a)
-     → (∀ a → f a ≡ g a)
-     → f ≡ g)
- (fe-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-       → (f g : (a : A) → B a)
-       → (p : f ≡ g)
-       → fe f g (λ a → cong-app p a) ≡ p)
- where
+open import Axioms.FunExt
 
- Π-is-set : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} (B-is-set : ∀ x → UIP (B x))
+module HSet-FE
+ (fe : FunExt-Axiom)
+ where
+ open FE fe
+ 
+ UIP-isProp : ∀ {ℓ} {A : Type ℓ}
+            → isProp (UIP A)
+ UIP-isProp x y =
+  funExt λ a → funExt λ a' → funExt λ p → funExt λ q →
+    (isProp→UIP (x a a') p q (x a a' p q) (y a a' p q))
+
+ HSet-≡ : (A B : HSet) → A .Dom ≡ B .Dom → A ≡ B
+ HSet-≡ (hset A has-UIP) (hset .A has-UIP') refl =
+   cong (hset A) (UIP-isProp has-UIP has-UIP')
+
+ HSet-≡-subst : ∀ {ℓ} (A B : HSet) {C : Type → Type ℓ}
+              → (p : A .Dom ≡ B .Dom) {c : C (A .Dom)}
+              → subst (λ - → C (- .Dom)) (HSet-≡ A B p) c
+              ≡ subst C p c
+ HSet-≡-subst (hset A has-UIP) (hset _ has-UIP') {C} refl {c} =
+    subst (λ - → C (- .Dom)) (cong (hset A) (UIP-isProp has-UIP has-UIP')) c
+      ≡⟨ subst-∘ (UIP-isProp has-UIP has-UIP') c ⟩⁻¹
+    subst (λ - → C ((hset A -) .Dom)) (UIP-isProp has-UIP has-UIP') c
+      ≡⟨⟩
+    subst (λ - → C A) (UIP-isProp has-UIP has-UIP') c
+      ≡⟨ subst-const _ c ⟩
+    c ∎ 
+  
+ Π-is-set : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} (B-is-set : ∀ x → UIP (B x))
           → UIP ((x : A) → B x)
  Π-is-set B-is-set a a' p q =
   p
-   ≡⟨ fe-≡ _ _ p ⟩⁻¹
-  fe _ _ (λ a → cong-app p a)
-   ≡⟨ cong (fe _ _) (fe _ _ λ a → B-is-set a _ _ _ _) ⟩
-  fe _ _ (λ a → cong-app q a)
-   ≡⟨ fe-≡ _ _ q ⟩
+   ≡⟨ funExt-η p ⟩⁻¹
+  funExt (λ a → happly p a)
+   ≡⟨ cong funExt (funExt λ a → B-is-set a _ _ _ _) ⟩
+  funExt (λ a → happly q a)
+   ≡⟨ funExt-η q ⟩
   q ∎
 
  HΠ : (A : Set) (B : A → HSet) → HSet
@@ -128,5 +130,17 @@ module HΠ
  infix 2 HΠ-syntax
  syntax HΠ-syntax A (λ x → B) = HΠ[ x ∈ A ] B
 
+open import Equiv
+open import Axioms.Univalence
 
-open HΠ
+module HSet-UA
+ (fe-axiom : FunExt-Axiom)
+ (ua-axiom : Univalence-Axiom)
+ where
+
+ open HSet-FE fe-axiom
+ open UA ua-axiom
+
+ HSet-≃ : (A B : HSet) → A .Dom ≃ B .Dom → A ≡ B
+ HSet-≃ A B = HSet-≡ A B ∘ ua 
+ 

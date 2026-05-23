@@ -2,7 +2,6 @@ open import Prelude
 
 module Inequalities where
 
-
 _≡ℕ_ : ℕ → ℕ → Type
 zero ≡ℕ zero = ⊤
 zero ≡ℕ 1+ m = ⊥
@@ -15,13 +14,15 @@ zero ≡ℕ 1+ m = ⊥
 
 infix 4 _≡ℕ_
 
-recover-nat-eq' : (n m : ℕ) → .(n ≡ℕ m) → n ≡ m
-recover-nat-eq' zero zero n≡m = refl
-recover-nat-eq' (1+ n) (1+ m) n≡m = cong suc (recover-nat-eq' n m n≡m)
+recover-nat-eq : (n m : ℕ) → .(n ≡ℕ m) → n ≡ m
+recover-nat-eq zero zero n≡m = refl
+recover-nat-eq (1+ n) (1+ m) n≡m = cong suc (recover-nat-eq n m n≡m)
 
-recover-nat-eq'-refl : ∀ n → recover-nat-eq' n n (≡ℕ-refl n) ≡ refl
-recover-nat-eq'-refl zero   = refl
-recover-nat-eq'-refl (1+ n) = cong (cong suc) (recover-nat-eq'-refl n)
+recover-nat-eq-refl : ∀ n → (n≡n : n ≡ℕ n) → recover-nat-eq n n n≡n ≡ refl
+recover-nat-eq-refl zero   n≡n = refl
+recover-nat-eq-refl (1+ n) n≡n = cong (cong suc) (recover-nat-eq-refl n n≡n)
+
+{-# REWRITE recover-nat-eq-refl #-}
 
 record [_≤_][_]₂ (p n δ : ℕ) : Type where
   eta-equality
@@ -78,6 +79,9 @@ drop₄-3 : ∀ {p r q n δ} → [ p ≤ r ≤ q ≤ n ][ δ ]₄ → [ p ≤ r 
 drop₄-3 (ineq₄ _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
  ineq₃ δpn δrn Hpr Hpn Hrn Hprn
 
+0≤n : ∀ n → [ 0 ≤ n ][ n ]₂
+0≤n n = ineq₂ (≡ℕ-refl n)
+
 ◆₂_ : ∀ n → [ n ≤ n ][ 0 ]₂
 ◆₂ n = ineq₂ (≡ℕ-refl n)
 
@@ -103,6 +107,10 @@ drop₄-3 (ineq₄ _ δpn _ δrn _ Hpr _ Hpn _ Hrn _ _ Hprn _ _) =
 
 ↑₂_ : ∀ {p n δ} → [ p ≤ n ][ δ ]₂ → [ p ≤ 1+ n ][ 1+ δ ]₂
 ↑₂ ineq₂ Hpn = ineq₂ Hpn
+
+←₂_ : ∀ {p n δ} → [ p ≤ n ][ 1+ δ ]₂ → [ 1+ p ≤ n ][ δ ]₂
+←₂ ineq₂ Hpn = ineq₂ Hpn
+
 
 ⇑₂_ : ∀ {p n δ} → [ p ≤ n ][ δ ]₂ → [ 1+ p ≤ 1+ n ][ δ ]₂
 ⇑₂ ineq₂ Hpn = ineq₂ Hpn
@@ -149,7 +157,7 @@ variable
        → (base : P n (◆₂ n))
        → (rec : ∀ p {δ} → (p<n : [ 1+ p ≤ n ][ δ ]₂) → P (1+ p) p<n → P p (↓₂ p<n))
        → P p p≤n
-≤₂-ind p n {zero} (ineq₂ Hpn) P base rec with recover-nat-eq' p n Hpn
+≤₂-ind p n {zero} (ineq₂ Hpn) P base rec with recover-nat-eq p n Hpn
 ... | refl = base
 ≤₂-ind p n {1+ δ} (ineq₂ Hpn) P base rec =
   rec p (ineq₂ Hpn) (≤₂-ind (1+ p) n _ P base rec)
@@ -162,7 +170,7 @@ variable
                           → P p q (↓₃ p≤q<n))
        → P p q p≤q≤n
 ≤₃-ind p q n {zero} (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) P base rec with
-  recover-nat-eq' p q Hpq | recover-nat-eq' δqn δpn Hpqn
+  recover-nat-eq p q Hpq | recover-nat-eq δqn δpn Hpqn
 ... | refl | refl = base p (ineq₂ _)
 ≤₃-ind p (1+ q) n {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) P base rec =
   let 1+p≤q≤n = ineq₃ δpn δqn Hpq Hpn Hqn Hpqn in
@@ -177,7 +185,7 @@ variable
               → P p r q (↓₄ p≤r≤q<n))
        → P p r q p≤r≤q≤n
 ≤₄-ind p r q n {zero} (ineq₄ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn)  P base rec
-  with recover-nat-eq' p r Hpr | recover-nat-eq' δrq δpq Hprq | recover-nat-eq' δrn δpn Hprn
+  with recover-nat-eq p r Hpr | recover-nat-eq δrq δpq Hprq | recover-nat-eq δrn δpn Hprn
 ... | refl | refl | refl = base p q (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn)
 ≤₄-ind p (1+ r) (1+ q) n {1+ δ} (ineq₄ (1+ δpq) (1+ δpn) δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn) P base rec =
   let 1+p≤r≤q≤n = ineq₄ δpq δpn δrq δrn δqn Hpr Hpq Hpn Hrq Hrn Hqn Hprq Hprn Hpqn Hrqn in

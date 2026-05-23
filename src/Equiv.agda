@@ -2,6 +2,11 @@ open import Prelude
 
 module Equiv where
 
+_∼_ : ∀ {ℓ} {ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
+    → (f g : (x : A) → B x) → Type (ℓ ⊔ ℓ')
+f ∼ g = (x : _) → f x ≡ g x
+infixr 4 _∼_
+
 hasLInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
 hasLInv {A = A} {B} f = Σ[ g ∈ (B → A) ] (∀ a → g (f a) ≡ a)
 
@@ -38,9 +43,6 @@ _∙≃_ (f  , (g  , linv)  , (h  , rinv))
      ((λ c → g (g' c)) , λ a → cong g  (linv' (f a)) ∙ linv a ) ,
      ((λ c → h (h' c)) , λ c → cong f' (rinv (h' c)) ∙ rinv' c)
 
-≃id : ∀ {ℓ} (A : Set ℓ) → A ≃ A
-≃id A = id , ((id , λ _ → refl) , id , (λ _ → refl))
-
 module _ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (e : A ≃ B) where
   equivFun : A → B
   equivFun = e .₁
@@ -53,11 +55,25 @@ module _ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (e : A ≃ B) where
 
   secEq : ∀ b → equivFun (invEq b) ≡ b
   secEq = isEquiv→hasQInv equivFun (e .₂) .₂ .₂
-  
+
+≃id : ∀ {ℓ} (A : Set ℓ) → A ≃ A
+≃id A = id , ((id , λ _ → refl) , id , (λ _ → refl))
+
+≃sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → A ≃ B → B ≃ A
+≃sym {A = A} {B} e = f , (g , f∘g∼id) , (g , g∘f∼id)
+ where
+ f = invEq e
+ g = equivFun e
+ f∘g∼id = secEq e
+ g∘f∼id = retEq e
+
+≃sym-id : ∀ {ℓ} (A : Set ℓ) → ≃sym (≃id A) ≡ ≃id A
+≃sym-id A = refl
+
 eq→isEquiv : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A ≃ B
 eq→isEquiv eq = (transport eq)
-              , (transport (sym eq) , λ b → subst-sym-l eq b)
-              , (transport (sym eq) , λ a → subst-sym-r eq a)
+              , (transport (sym eq) , subst-sym-l eq)
+              , (transport (sym eq) , subst-sym-r eq)
 
 isHAE : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (f : A → B) → Type (ℓ ⊔ ℓ')
 isHAE {A = A} {B} f = Σ[ g ∈ (B → A) ]
@@ -130,7 +146,7 @@ hasQInv→isHAE f (g , linv , rinv) =
                        ≡ b 
  f-linv-helper a b =
   subst (λ - → B (equivFun A≈ -)) (η a) (subst B (sym (ε (equivFun A≈ a))) b)
-    ≡⟨ subst-∘ (η a) ⟩
+    ≡⟨ subst-∘ (η a)  _ ⟩
   subst B (cong (equivFun A≈) (η a)) (subst B (sym (ε (equivFun A≈ a))) b)
     ≡⟨ cong (λ - → subst B - (subst B (sym (ε (equivFun A≈ a))) b)) (γ a) ⟩
   subst B (ε (equivFun A≈ a)) (subst B (sym (ε (equivFun A≈ a))) b)
@@ -213,7 +229,7 @@ module ≃Π
        subst B (ε (equivFun A≃ a)) (h (invEq A≃ (equivFun A≃ a)))
          ≡⟨ cong (λ - → subst B - (h (invEq A≃ (equivFun A≃ a)))) (γ a) ⟩⁻¹
        subst B (cong (equivFun A≃) (η a)) (h (invEq A≃ (equivFun A≃ a)))
-         ≡⟨ subst-∘ (η a) ⟩⁻¹
+         ≡⟨ subst-∘ (η a) _ ⟩⁻¹
        subst (λ - → B (equivFun A≃ -)) (η a) (h (invEq A≃ (equivFun A≃ a)))
          ≡⟨ dcong h (η a) ⟩ 
        h a ∎

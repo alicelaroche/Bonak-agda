@@ -5,80 +5,7 @@ module Category  (arity : Type) where
 open import HSet
 open import Inequalities
 
-data Hom : ℕ → ℕ → Type where
-  base : Hom 0 0
-  ari-cons : ∀ {p n} → (ε : arity) → Hom p n → Hom p (suc n)
-  nil-cons : ∀ {p n} → Hom p n → Hom (suc p) (suc n)
-
-hom-id : ∀ {n} → Hom n n
-hom-id {zero}  = base
-hom-id {suc n} = nil-cons (hom-id)
-
-restr : ∀ p n {δ} → [ p ≤ n ][ δ ]₂ → arity → Hom n (1+ n)
-restr zero        n p≤n ε = ari-cons ε (hom-id)
-restr (1+ p) (1+ n) p≤n ε = nil-cons (restr p n (⇓₂ p≤n) ε)
-
-compose : ∀ {p q n} → Hom q n → Hom p q → Hom p n
-compose base           f = f
-compose (ari-cons ε g) f = ari-cons ε (compose g f)
-compose (nil-cons g) (nil-cons f)   = nil-cons (compose g f)
-compose (nil-cons g) (ari-cons ε f) = ari-cons ε (compose g f)
-
-compose-idl : ∀ {p n} → (f : Hom p n) → compose (hom-id) f ≡ f
-compose-idl base           = refl
-compose-idl (ari-cons ε f) = cong (ari-cons ε) (compose-idl f)
-compose-idl (nil-cons f)   = cong nil-cons (compose-idl f)
-
-compose-idr : ∀ {p n} → (f : Hom p n) → compose f (hom-id) ≡ f
-compose-idr base           = refl
-compose-idr (ari-cons ε f) = cong (ari-cons ε) (compose-idr f)
-compose-idr (nil-cons f)   = cong nil-cons (compose-idr f)
-
-compose-assoc : ∀ {p q n r} (h : Hom n r) (g : Hom q n) (f : Hom p q)
-              → compose h (compose g f) ≡ compose (compose h g) f
-compose-assoc base g f = refl
-compose-assoc (ari-cons ε h) g f = cong (ari-cons ε) (compose-assoc h g f)
-compose-assoc (nil-cons h) (ari-cons ε g) f = cong (ari-cons ε) (compose-assoc h g f)
-compose-assoc (nil-cons h) (nil-cons g) (ari-cons ε f) = cong (ari-cons ε) (compose-assoc h g f)
-compose-assoc (nil-cons h) (nil-cons g) (nil-cons f) = cong nil-cons (compose-assoc h g f)
-
-compose-restr : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
-              → (ε ω : arity)
-              → compose (restr p (1+ n) (↑₂ drop₃-2 p≤q≤n) ω) (restr q n (drop₃-1 p≤q≤n) ε)
-              ≡ compose (restr (1+ q) (1+ n) (⇑₂ drop₃-1 p≤q≤n) ε) (restr p n (drop₃-2 p≤q≤n) ω)
-compose-restr n zero q p≤q≤n ε ω =
-  cong (ari-cons ω) (trans (compose-idl (restr q n _ ε)) (sym (compose-idr (restr q n _ ε))))
-compose-restr (1+ n) (1+ p) (1+ q) p≤q≤n ε ω =
-  cong nil-cons (compose-restr n p q (⇓₃ p≤q≤n) ε ω)
-
-record RestrInfo (n : ℕ) : Type where
-  constructor info
-  field
-    restr-p : ℕ
-    restr-δ : ℕ
-    restr-ε : arity
-    restr-p≤n : [ restr-p ≤ n ][ restr-δ ]₂
-open RestrInfo public
-
-decompose : ∀ p n → Hom p n
-          → (p ≡ n) ⊎ (Σ[ i ∈ RestrInfo p ] Hom (suc p) n)
-decompose p n base = inl refl
-decompose p n (ari-cons ε f) = inr (info 0 p ε (ineq₂ (≡ℕ-refl p)) , (nil-cons f))
-decompose p n (nil-cons f)   with decompose _ _ f
-... | inl eq                   = inl (cong suc eq)
-... | inr (info p' _ ε p≤q , f') = inr ((info (1+ p') _ ε (⇑₂ p≤q)) , (nil-cons f'))
-
 record Presheaf : Type₁ where
-  field
-    F0 : ℕ → HSet
-    F1 : ∀ {p n} → Hom p n → F0 n .Dom → F0 p .Dom
-    F1-id : ∀ n → (X : F0 n .Dom) → F1 (hom-id) X ≡ X
-    F1-compose : ∀ (p q n : ℕ) (g : Hom q n) (f : Hom p q) (X : F0 n .Dom)
-               → F1 f (F1 g X)
-               ≡ F1 (compose g f ) X
-open Presheaf public
-
-record Presheaf' : Type₁ where
   field
     F0 : ℕ → HSet
     Face : ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → F0 (1+ n) .Dom → F0 n .Dom
@@ -87,4 +14,173 @@ record Presheaf' : Type₁ where
              → (X : F0 (2+ n) .Dom)
              → Face n q (drop₃-1 p≤q≤n) ε (Face (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω X) 
              ≡ Face n p (drop₃-2 p≤q≤n) ω (Face (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε X)
-open Presheaf' public
+open Presheaf public
+
+Presheaf-≡' : ∀ psh psh'
+           → (p : psh .F0 ≡ psh' .F0)
+           → (q : subst (λ - → ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom) p (psh .Face)
+                ≡ psh' .Face)
+           → subst (λ - → ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
+                        → (ε ω : arity)
+                        → (X : psh' .F0 (2+ n) .Dom)
+                        → - n q (drop₃-1 p≤q≤n) ε (- (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω X) 
+                        ≡ - n p (drop₃-2 p≤q≤n) ω (- (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε X))
+             q (dsubst
+                 (λ - → ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+                 (λ -₁ -₂ → ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
+                    → (ε ω : arity)
+                    → (X : -₁ (2+ n) .Dom)
+                    → -₂ n q (drop₃-1 p≤q≤n) ε
+                      (-₂ (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω X)
+                    ≡ -₂ n p (drop₃-2 p≤q≤n) ω
+                      (-₂ (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε X))
+             p (psh .Face-coh))
+           ≡ psh' .Face-coh
+           → psh ≡ psh'
+Presheaf-≡' psh psh' refl refl refl = refl
+
+open import Axioms.FunExt
+module Presheaf-FE
+  (fe-axiom : FunExt-Axiom)
+  where
+  open FE fe-axiom
+  open HSet-FE fe-axiom
+  
+  Presheaf-≡ : ∀ (psh psh' : Presheaf)
+             → (F0≡ : ∀ n → psh .F0 n .Dom ≡ psh' .F0 n .Dom)
+             → (∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
+                          → (ε : arity) → (X : psh .F0 (1+ n) .Dom)
+                          → transport (F0≡ n) (psh .Face n p p≤n ε X)
+                          ≡ psh' .Face n p p≤n ε (transport (F0≡ (1+ n)) X))
+             → psh ≡ psh'
+  Presheaf-≡ psh psh' F0≡ Face≡ = Presheaf-≡' psh psh'
+    (funExt λ n → HSet-≡ _ _ (F0≡ n))
+    (funExt λ n → funExt λ p → funExt-impl (funExt λ p≤n →
+    funExt λ ε → funExt λ X → I n p p≤n ε X))
+    (funExt λ n → funExt λ p → funExt λ q → funExt-impl (
+     funExt λ p≤q≤n → funExt λ ε → funExt λ ω →
+     funExt λ X → psh' .F0 n .has-UIP _ _ _ _))
+   where  
+    I : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
+      → (ε : arity)
+      → (X : psh' .F0 (1+ n) .Dom)
+      → subst (λ - → ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+           (funExt (λ n → HSet-≡ _ _ (F0≡ n)))
+           (psh .Face) n p p≤n ε X
+      ≡ psh' .Face n p p≤n ε X
+    I n p {δ} p≤n ε X =
+      subst (λ - → ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face) n p {δ} p≤n ε X
+       ≡⟨ happly (happly (happly (happly-impl (happly
+           (subst-application
+              (λ - → ∀ n p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+              (λ _ - → - n) (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n))))
+            p) δ) p≤n) ε) X ⟩⁻¹
+      subst (λ - → ∀ p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n) p {δ} p≤n ε X
+       ≡⟨ happly (happly (happly (happly-impl
+           (subst-application
+              (λ - → ∀ p {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+              {B₂ = λ - → ∀ {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom}
+              (λ _ - → - p) (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n))))
+            δ) p≤n) ε) X ⟩⁻¹
+       subst (λ - → ∀ {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p) p≤n ε X
+       ≡⟨ happly (happly (happly
+            (subst-application
+              (λ - → ∀ {δ} → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+              (λ _ - → - {δ}) (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n))))
+            p≤n) ε) X  ⟩⁻¹
+      subst (λ - → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p) p≤n ε X
+       ≡⟨ happly (happly
+            (subst-application (λ - → [ p ≤ n ][ δ ]₂ → arity → - (1+ n) .Dom → - n .Dom)
+              (λ _ - → - p≤n) (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n))))
+           ε) X  ⟩⁻¹
+      subst (λ - → arity → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n) ε X
+       ≡⟨ happly (subst-application (λ - → arity → - (1+ n) .Dom → - n .Dom) (λ _ - → - ε)
+            (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))) X ⟩⁻¹
+      subst (λ - → - (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n ε) X
+       ≡⟨ happly (subst-dup (λ -₁ -₂ → -₁ (1+ n) .Dom → -₂ n .Dom)
+             (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+             (psh .Face n p p≤n ε)) X ⟩
+      subst (λ - → - (1+ n) .Dom → psh' .F0 n .Dom)
+         (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+      (subst (λ - → psh .F0 (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n ε)) X
+       ≡⟨ happly (funExt-subst (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)) (1+ n) _) _ ⟩
+      subst (λ - → - .Dom → psh' .F0 n .Dom)
+         (HSet-≡ (psh .F0 (1+ n)) (psh' .F0 (1+ n)) (F0≡ (1+ n)))
+      (subst (λ - → psh .F0 (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n ε)) X
+       ≡⟨ happly (HSet-≡-subst (psh .F0 (1+ n)) (psh' .F0 (1+ n)) (F0≡ (1+ n))) _ ⟩
+      subst (λ - → - → psh' .F0 n .Dom)
+         (F0≡ (1+ n))
+      (subst (λ - → psh .F0 (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n ε)) X
+       ≡⟨ happly (subst-fun-l (F0≡ (1+ n))
+           (subst (λ - → psh .F0 (1+ n) .Dom → - n .Dom)
+           (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+           (psh .Face n p p≤n ε))) X ⟩
+      subst (λ - → psh .F0 (1+ n) .Dom → - n .Dom)
+        (funExt (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)))
+        (psh .Face n p p≤n ε) (transport (sym (F0≡ (1+ n))) X)
+       ≡⟨ happly (funExt-subst (λ n → HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n)) n _) _ ⟩
+      subst (λ - → psh .F0 (1+ n) .Dom → - .Dom)
+        (HSet-≡ (psh .F0 n) (psh' .F0 n) (F0≡ n))
+        (psh .Face n p p≤n ε) (transport (sym (F0≡ (1+ n))) X)
+       ≡⟨ happly (HSet-≡-subst (psh .F0 n) (psh' .F0 n) (F0≡ n)) _ ⟩
+      subst (λ - → psh .F0 (1+ n) .Dom → -) (F0≡ n)
+        (psh .Face n p p≤n ε) (transport (sym (F0≡ (1+ n))) X)
+       ≡⟨ happly (subst-fun-r (F0≡ n) (psh .Face n p p≤n ε)) (transport (sym (F0≡ (1+ n))) X) ⟩
+      transport (F0≡ n) (psh .Face n p p≤n ε (transport (sym (F0≡ (1+ n))) X))
+       ≡⟨ Face≡ n p p≤n ε _ ⟩
+      psh' .Face n p p≤n ε (transport (F0≡ (1+ n)) (transport (sym (F0≡ (1+ n))) X))
+       ≡⟨ cong (psh' .Face n p p≤n ε) (subst-sym-r (F0≡ (1+ n)) X) ⟩
+      psh' .Face n p p≤n ε X ∎
+     
+open import Equiv
+open import Axioms.Univalence
+
+module Presheaf-UA
+ (fe-axiom : FunExt-Axiom)
+ (ua-axiom : Univalence-Axiom)
+ where
+
+  open UA ua-axiom
+  open Presheaf-FE fe-axiom
+  
+  Presheaf-≃ : ∀ (psh psh' : Presheaf)
+             → (F0≃ : ∀ n → psh .F0 n .Dom ≃ psh' .F0 n .Dom)
+             → (∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
+                          → (ε : arity) → (X : psh .F0 (1+ n) .Dom)
+                          → F0≃ n .₁ (psh .Face n p p≤n ε X)
+                          ≡ psh' .Face n p p≤n ε (F0≃ (1+ n) .₁ X))
+             → psh ≡ psh'
+  Presheaf-≃ psh psh' F0≃ Face≃ =
+    Presheaf-≡ psh psh' (λ n → ua (F0≃ n)) I
+    where
+    I : ∀ n p {δ} → (p≤n : [ p ≤ n ][ δ ]₂)
+      → (ε : arity) → (X : psh .F0 (1+ n) .Dom)
+      → subst (λ - → -) (ua (F0≃ n)) (psh .Face n p p≤n ε X)
+      ≡ psh' .Face n p p≤n ε (subst (λ - → -) (ua (F0≃ (1+ n))) X)
+    I n p p≤n ε X =
+      subst (λ - → -) (ua (F0≃ n)) (psh .Face n p p≤n ε X)
+        ≡⟨ happly (ua-β (F0≃ n)) _ ⟩
+       F0≃ n .₁ (psh .Face n p p≤n ε X)
+        ≡⟨ Face≃ n p p≤n ε X ⟩
+       psh' .Face n p p≤n ε (F0≃ (1+ n) .₁ X)
+        ≡⟨ cong (psh' .Face n p p≤n ε) (happly (ua-β (F0≃ (1+ n))) X) ⟩⁻¹
+       psh' .Face n p p≤n ε (subst (λ - → -) (ua (F0≃ (1+ n))) X) ∎ 
+
