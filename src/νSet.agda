@@ -8,8 +8,6 @@ module νSet
   (arity : Type)
   where
 
-open import νSet.Base fe arity using
-  ( Ctx; fullframe; []; _∷_; TotalSpace
-  ; νSet->; this; next; νSet) public
-open import νSet.Face fe arity using (νFace; νFace-coh; νFace-≡) public
+open import νSet.Base fe arity public
+open import νSet.Face fe arity public
 open import νSet.Bisim fe ua arity public

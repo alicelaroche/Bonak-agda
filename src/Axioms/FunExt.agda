@@ -30,6 +30,18 @@ module FE (axiom : FunExt-Axiom) where
   funExt-β : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {f g : (x : A) → B x} (p : (x : A) → f x ≡ g x) → happly (funExt p) ≡ p
   funExt-β p = secEq (fe-≃ _ _) p
 
+  funExt-sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
+             → {f g : (x : A) → B x} (p : (x : A) → f x ≡ g x)
+             → sym (funExt p) ≡ funExt λ - → sym (p -)
+  funExt-sym p =
+    sym (funExt p)
+     ≡⟨ funExt-η (sym (funExt p)) ⟩⁻¹
+    funExt (happly (sym (funExt p)))
+     ≡⟨ cong funExt (happly-sym (funExt p)) ⟩⁻¹
+   funExt (λ - → sym (happly (funExt p) -))
+     ≡⟨ cong funExt (cong (sym ∘_) (funExt-β p)) ⟩
+    funExt (λ - → sym (p -)) ∎
+
   funExt-subst : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'}
                → {f g : (x : A) → B x} (p : (x : A) → f x ≡ g x)
                → (a : A) {C : B a → Type ℓ''} (c : C (f a))

@@ -130,6 +130,10 @@ subst-paths-l : ∀ {ℓ} {A : Type ℓ} {x y y' : A} (p : x ≡ y) (q : y ≡ y
               → subst (λ y → x ≡ y) q p ≡ p ∙ q
 subst-paths-l p refl = sym (trans-identity-r p)
 
+subst-paths-r : ∀ {ℓ} {A : Type ℓ} {x x' y : A} (p : x ≡ x') (q : x ≡ y)
+              → subst (λ x →  x ≡ y) p q ≡ sym p ∙ q
+subst-paths-r refl p = refl
+
 subst-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {x y : A} {C : B → Type ℓ''}
         → {f : A → B}
         → (x≡y : x ≡ y) (c : C (f x))
@@ -142,14 +146,16 @@ subst-∘' : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {x : A} {
           → subst (λ - → C (- x)) f≡g c ≡ subst C (happly f≡g x) c
 subst-∘' refl c = refl
 
-subst-fun-r : ∀ {ℓ ℓ'} {A : Type ℓ} {B B' : Type ℓ'}
-            → (p : B ≡ B') (f : A → B)
-            → subst (λ X → A → X) p f ≡ transport p ∘ f
+subst-fun-r : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : A → Type ℓ''}
+            → {a a' : A}
+            → (p : a ≡ a') (f : B → C a)
+            → subst (λ - → B → C -) p f ≡ subst C p ∘ f
 subst-fun-r refl f = refl
 
-subst-fun-l : ∀ {ℓ ℓ'} {A A' : Type ℓ} {B : Type ℓ'}
-            → (p : A ≡ A') (f : A → B)
-            → subst (λ X → X → B) p f ≡ f ∘ transport (sym p)
+subst-fun-l : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ''}
+            → {a a' : A}
+            → (p : a ≡ a') (f : B a → C)
+            → subst (λ - → B - → C) p f ≡ f ∘ subst B (sym p)
 subst-fun-l refl f = refl
 
 subst-application : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ}
@@ -179,6 +185,11 @@ cong-sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A}
          → (f : A → B) (p : a ≡ a')
          → sym (cong f p) ≡ cong f (sym p)
 cong-sym f refl = refl
+
+happly-sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A -> Type ℓ'} {f g : (a : A) → B a}
+           → (p : f ≡ g)
+           → sym ∘ happly p ≡ happly (sym p)
+happly-sym refl = refl
 
 J : ∀ {ℓ ℓ'} {A : Type ℓ} {x : A} (P : (y : A) → x ≡ y → Type ℓ') → P x refl → {y : A} (p : x ≡ y) → P y p
 J P p refl = p
@@ -241,6 +252,13 @@ _×_ A B = Σ A (λ _ → B)
 ≡→Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
         → {x y : Σ A B} → (p : x ≡ y) → p ≡ Σ-≡→≡ (≡→Σ-≡ p)
 ≡→Σ-≡→≡ refl = refl
+
+Σ-≡-sym : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+        → {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂}
+        → (p : a₁ ≡ a₂)
+        → (q : subst (λ x → B x) p b₁ ≡ b₂)
+        → sym (Σ-≡→≡ (p , q)) ≡ Σ-≡→≡ (sym p , sym (cong (subst B (sym p)) q) ∙ subst-sym-l p b₁)
+Σ-≡-sym refl refl = refl
 
 subst-Σ : ∀ {ℓ ℓ' ℓ''} {X : Set ℓ} {A : X → Set ℓ'} {B : Σ[ x ∈ X ] A x → Set ℓ''}
         → {x₁ x₂ : X} {a : A x₁} {b : B (x₁ , a)}

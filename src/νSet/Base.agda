@@ -296,31 +296,20 @@ coh-painting n p (1+ q) (1+ r) {1+ δ} p≤r≤q≤n@(ineq₄ (1+ δpq) (1+ δpn
    restr-painting n p (1+ r) (drop₄-3 p≤r≤q≤n) ω (D .₁) (D .₂) _
       (restr-painting (1+ n) p (2+ q) (↑₃' drop₄-2 p≤r≤q≤n) ε D E d (l , c)) ∎
 
-opaque
-  Ctx : (n : ℕ) → Type₁
-  Ctx = νSet-<
+fullframe : {n : ℕ} (D : νSet-< n) → HSet
+fullframe {n} D = frame n n (◆₂ n) D
 
-  fullframe : {n : ℕ} (D : Ctx n) → HSet
-  fullframe {n} D = frame n n (◆₂ n) D
-
-  [] : Ctx 0
-  [] = tt
-  
-  _∷_ : ∀ {n} → (D : Ctx n) → (fullframe D .Dom → HSet) → Ctx (1+ n)
-  _∷_ D E = D , E
-
-infixl 4 _∷_
-
-TotalSpace : ∀ {n} → (D : Ctx n) → (fullframe D .Dom → HSet) → HSet
+TotalSpace : ∀ {n} → (D : νSet-< n) → (fullframe D .Dom → HSet) → HSet
 TotalSpace D E = HΣ[ d ∈ fullframe D ] E d
 
-record νSet-> (n : ℕ) (D : Ctx n) : Type₁ where
+record νSet-> (n : ℕ) (D : νSet-< n) : Type₁ where
   coinductive
+  constructor _∷_
   field
    this : fullframe D .Dom → HSet
-   next : νSet-> (1+ n) (D ∷ this)
+   next : νSet-> (1+ n) (D , this)
 
 open νSet-> public
 
 νSet : Type₁
-νSet = νSet-> 0 []
+νSet = νSet-> 0 tt

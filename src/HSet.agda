@@ -35,23 +35,24 @@ isProp→UIP propA a a' = isContr→isProp (isProp→isContrPath propA _ _)
 ℕ-cong : ∀ {n m} (p : 1+ n ≡ 1+ m) → cong suc (cong pred p) ≡ p
 ℕ-cong refl = refl
 
-ℕ-UIP : UIP ℕ
-ℕ-UIP (zero) (zero) refl refl = refl
-ℕ-UIP (1+ x) (1+ y) p q =
- p ≡⟨ ℕ-cong p ⟩⁻¹
- cong suc (cong pred p) ≡⟨ cong (cong suc) (ℕ-UIP x y (cong pred p) (cong pred q)) ⟩
- cong suc (cong pred q) ≡⟨ ℕ-cong q ⟩
- q ∎
+opaque
+  ℕ-UIP : UIP ℕ
+  ℕ-UIP (zero) (zero) refl refl = refl
+  ℕ-UIP (1+ x) (1+ y) p q =
+   p ≡⟨ ℕ-cong p ⟩⁻¹
+   cong suc (cong pred p) ≡⟨ cong (cong suc) (ℕ-UIP x y (cong pred p) (cong pred q)) ⟩
+   cong suc (cong pred q) ≡⟨ ℕ-cong q ⟩
+   q ∎
 
-Σ-UIP : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
-      → (A-is-set : UIP A)
-      → (B-is-set : (a : A) → UIP (B a))
-      → UIP (Σ A B)
-Σ-UIP A-is-set B-is-set x y p q =
-  p               ≡⟨ ≡→Σ-≡→≡ p ⟩
-  Σ-≡→≡ (≡→Σ-≡ p) ≡⟨ cong Σ-≡→≡ (Σ-≡→≡ ((A-is-set _ _ _ _) , (B-is-set _ _ _ _ _))) ⟩
-  Σ-≡→≡ (≡→Σ-≡ q) ≡⟨ ≡→Σ-≡→≡ q ⟩⁻¹
-  q ∎
+  Σ-UIP : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+        → (A-is-set : UIP A)
+        → (B-is-set : (a : A) → UIP (B a))
+        → UIP (Σ A B)
+  Σ-UIP A-is-set B-is-set x y p q =
+    p               ≡⟨ ≡→Σ-≡→≡ p ⟩
+    Σ-≡→≡ (≡→Σ-≡ p) ≡⟨ cong Σ-≡→≡ (Σ-≡→≡ ((A-is-set _ _ _ _) , (B-is-set _ _ _ _ _))) ⟩
+    Σ-≡→≡ (≡→Σ-≡ q) ≡⟨ ≡→Σ-≡→≡ q ⟩⁻¹
+    q ∎
 
 record HSet : Type₁ where
  constructor hset
@@ -85,16 +86,26 @@ module HSet-FE
  (fe : FunExt-Axiom)
  where
  open FE fe
- 
- UIP-isProp : ∀ {ℓ} {A : Type ℓ}
-            → isProp (UIP A)
- UIP-isProp x y =
-  funExt λ a → funExt λ a' → funExt λ p → funExt λ q →
-    (isProp→UIP (x a a') p q (x a a' p q) (y a a' p q))
+
+ isProp-isProp : ∀ {ℓ} {A : Type ℓ} → isProp (isProp A)
+ isProp-isProp x y = funExt λ p → funExt λ q → isProp→UIP x p q (x p q) (y p q)
+
+ UIP-isProp : ∀ {ℓ} {A : Type ℓ} → isProp (UIP A)
+ UIP-isProp x y = funExt λ a → funExt λ a' → isProp-isProp (x a a') (y a a')
 
  HSet-≡ : (A B : HSet) → A .Dom ≡ B .Dom → A ≡ B
  HSet-≡ (hset A has-UIP) (hset .A has-UIP') refl =
    cong (hset A) (UIP-isProp has-UIP has-UIP')
+
+ HSet-≡-sym : ∀ (A B : HSet)
+            → (p : A .Dom ≡ B .Dom)
+            → sym (HSet-≡ A B p) ≡ HSet-≡ B A (sym p)
+ HSet-≡-sym (hset A has-UIP) (hset _ has-UIP') refl =
+   sym (cong (hset A) (UIP-isProp has-UIP has-UIP'))
+     ≡⟨ cong-sym (hset A) (UIP-isProp has-UIP has-UIP') ⟩
+   cong (hset A) (sym (UIP-isProp has-UIP has-UIP'))
+     ≡⟨ cong (cong (hset A)) (isProp→UIP UIP-isProp _ _ _ _) ⟩
+   cong (hset A) (UIP-isProp has-UIP' has-UIP) ∎
 
  HSet-≡-subst : ∀ {ℓ} (A B : HSet) {C : Type → Type ℓ}
               → (p : A .Dom ≡ B .Dom) {c : C (A .Dom)}

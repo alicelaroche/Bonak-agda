@@ -31,178 +31,249 @@ record RestrInfo (n : ℕ) : Type where
     restr-p≤n : [ restr-p ≤ n ][ restr-δ ]₂
 open RestrInfo public
 
-Presheaf-this : ∀ m → (D : Ctx m) (E : fullframe D .Dom → HSet)
-              → (F0 : ∀ n {δ} → [ m ≤ n ][ δ ]₂ → HSet) 
-              → (Face : ∀ n p {δ δ'} → (m≤n : [ m ≤ n ][ δ ]₂)
-                      → [ p ≤ n ][ δ' ]₂
-                      → arity
-                      → F0 (1+ n) (↑₂ m≤n) .Dom
-                      → F0 n m≤n .Dom)
-              → (f : TotalSpace D E .Dom → F0 m (◆₂ m) .Dom)
-              → fullframe (D ∷ E) .Dom → HSet
-Presheaf-this m D E F0 Face f d =
- HΣ[ d' ∈ F0 (1+ m) (↑₂ ◆₂ m) ] HΠ[ r ∈ RestrInfo m ]
- H≡ (F0 m (◆₂ m))
-  (f (νFace m _ (r .restr-p≤n) (r .restr-ε) D E d))
-  (Face m _ (◆₂ m) (r .restr-p≤n) (r .restr-ε) d')
+F0-< : (m : ℕ) → Type₁
+F0-< zero   = ⊤
+F0-< (1+ m) = F0-< m × HSet
 
-Presheaf-next : ∀ m → (D : Ctx m) (E : fullframe D .Dom → HSet)
-              → (F0 : ∀ n {δ} → [ m ≤ n ][ δ ]₂ → HSet) 
-              → (Face : ∀ n p {δ δ'} → (m≤n : [ m ≤ n ][ δ ]₂)
-                      → [ p ≤ n ][ δ' ]₂
-                      → arity
-                      → F0 (1+ n) (↑₂ m≤n) .Dom
-                      → F0 n m≤n .Dom)
-              → (f : TotalSpace D E .Dom → F0 m (◆₂ m) .Dom)
-              → νSet-> (1+ m) (D ∷ E)
-Presheaf-next m D E F0 Face f .this = Presheaf-this m D E F0 Face f
-Presheaf-next m D E F0 Face f .next =
-  Presheaf-next (1+ m) (D ∷ E) (Presheaf-this m D E F0 Face f)
-    (λ n m≤n → F0 n (↓₂ m≤n))
-    (λ n p m≤n → Face n p (↓₂ m≤n))
-    (λ dc → dc .₂ .₁)
+Face-≤ : (m : ℕ) → F0-< m → HSet → Type₁
+Face-≤ zero   F0s F0' = ⊤
+Face-≤ (1+ m) (F0s , F0) F0'  =
+  Face-≤ m F0s F0 × (∀ p {δ} → [ p ≤ m ][ δ ]₂ → arity → F0' .Dom → F0 .Dom)
+
+Face-< : (m : ℕ) → F0-< m → Type₁
+Face-< 0   F0s = ⊤
+Face-< (1+ m) (F0s , F0) = Face-≤ m F0s F0
+
+Face-strict : {m : ℕ} {F0s : F0-< m} (F0 : HSet) → Face-≤ m F0s F0 → Face-< m F0s
+Face-strict {zero} _ face = tt
+Face-strict {1+ m} _ face = face .₁
+
+record F0-≥ (m : ℕ) : Type₁ where
+  coinductive
+  field
+   there : HSet
+   after : F0-≥ (1+ m)
+open F0-≥
+
+record Face-> (m : ℕ) (F0s : F0-≥ m) : Type₁ where
+  coinductive
+  field
+   there' : ∀ p {δ}
+          → [ p ≤ m ][ δ ]₂ → arity
+          → F0s .after .there .Dom
+          → F0s .there .Dom
+   after' : Face-> (1+ m) (F0s .after)
+open Face->
+
+record Presheaf-zipper (m : ℕ) : Type₁ where
+  field
+   |F0-<| : F0-< m
+   |F0-≥| : ∀ n → HSet
+   |Face-≤| : Face-≤ m |F0-<| (|F0-≥| 0)
+   |Face->| : ∀ n p {δ}
+            → [ p ≤ n + m ][ δ ]₂ → arity
+            → |F0-≥| (1+ n) .Dom
+            → |F0-≥| n .Dom
+open Presheaf-zipper
+
+bump-zipper : ∀ m → Presheaf-zipper m → Presheaf-zipper (1+ m)
+bump-zipper m zipper .|F0-<| = zipper .|F0-<| , zipper .|F0-≥| 0
+bump-zipper m zipper .|F0-≥| = zipper .|F0-≥| ∘ suc
+bump-zipper m zipper .|Face-≤| = zipper .|Face-≤| , zipper .|Face->| 0
+bump-zipper m zipper .|Face->| = zipper .|Face->| ∘ suc
+
+psh→zipper : Presheaf → Presheaf-zipper 0
+psh→zipper psh .|F0-<| = tt
+psh→zipper psh .|F0-≥| = psh .F0
+psh→zipper psh .|Face-≤| = tt
+psh→zipper psh .|Face->| = psh .Face
+
+Presheaf-Ctx : ∀ m → (F0 : F0-< m) → (Face : Face-< m F0) → νSet-< m
+Presheaf-νFace : ∀ m → (F0 : F0-< (1+ m)) → (Face : Face-≤ m (F0 .₁) (F0 .₂))
+               → ∀ p {δ} → [ p ≤ m ][ δ ]₂ → arity
+               → fullframe (Presheaf-Ctx (1+ m) F0 Face) .Dom
+               → F0 .₂ .Dom
+
+Presheaf-Ctx 0 F0 Face = tt
+Presheaf-Ctx 1 F0 Face = tt , λ d → F0 .₂
+Presheaf-Ctx (2+ m) F0 Face =
+ Presheaf-Ctx (1+ m) (F0 .₁) (Face .₁) ,
+ λ d → HΣ[ d' ∈ F0 .₂ ] HΠ[ r ∈ RestrInfo m ]
+       H≡ (F0 .₁ .₂)
+          (Presheaf-νFace m (F0 .₁) (Face .₁) _ (r .restr-p≤n) (r .restr-ε) d)
+          (Face .₂ _ (r .restr-p≤n) (r .restr-ε) d')
+
+Presheaf-νFace zero F0 Face p p≤m ε d = (νFace 0 p p≤m ε (Presheaf-Ctx 1 F0 Face) d) .₂
+Presheaf-νFace (1+ m) F0 Face p p≤m ε d = (νFace (1+ m) p p≤m ε (Presheaf-Ctx (2+ m) F0 Face) d) .₂ .₁
+
+Presheaf-next : ∀ m
+              → (zipper : Presheaf-zipper m)
+              → νSet-> m (Presheaf-Ctx m (zipper .|F0-<|) (Face-strict _ (zipper .|Face-≤|)))
+Presheaf-next zero zipper .this d =  zipper .|F0-≥| 0
+Presheaf-next zero zipper .next = Presheaf-next 1 (bump-zipper 0 zipper) 
+Presheaf-next (1+ m) zipper .this d =
+  HΣ[ d' ∈ zipper .|F0-≥| 0 ] HΠ[ r ∈ RestrInfo m ]
+  H≡ (zipper .|F0-<| .₂)
+     (Presheaf-νFace m (zipper .|F0-<|) (Face-strict (zipper .|F0-≥| 0) (zipper .|Face-≤|)) (r .restr-p) (r .restr-p≤n) (r .restr-ε) d)
+     (zipper .|Face-≤| .₂ (r .restr-p) (r .restr-p≤n) (r .restr-ε) d')
+Presheaf-next (1+ m) zipper .next = Presheaf-next (2+ m) (bump-zipper (1+ m) zipper)
 
 f : Presheaf → νSet
-f psh .this d = psh .F0 0
-f psh .next =
-  Presheaf-next 0 [] (λ _ → psh .F0 0)
-   (λ n _ → psh .F0 n)
-   (λ n p m≤n → psh .Face n p)
-   (λ dc → dc .₂)
+f psh = Presheaf-next 0 (psh→zipper psh)
 
-νSet-X : ∀ m n {δ} → [ m ≤ n ][ δ ]₂ → (D : Ctx m) → νSet-> m D
-       → HSet
-νSet-X m n {zero} (ineq₂ Hmn) D νSet with recover-nat-eq m n Hmn
-... | refl = TotalSpace D (νSet .this)
-νSet-X m n {1+ δ} m≤n D νSet =
-  νSet-X (1+ m) n (←₂ m≤n) (D ∷ νSet .this) (νSet .next)
+νSet-F0-< : ∀ m → νSet-< m → F0-< m 
+νSet-F0-< zero D = tt
+νSet-F0-< (1+ m) (D , E) = (νSet-F0-< m D) , (TotalSpace D E)
 
-νSet-Face : ∀ m n p {δ δ'}
-          → (m≤n : [ m ≤ n ][ δ ]₂)
-          → (D : Ctx m) (νSet : νSet-> m D)
-          → [ p ≤ n ][ δ' ]₂
-          → arity
-          → νSet-X m (1+ n) (↑₂ m≤n) D νSet .Dom
-          → νSet-X m n m≤n D νSet .Dom
-νSet-Face m n p {zero} (ineq₂ Hmn) D νSet p≤n ε d with recover-nat-eq m n Hmn
-... | refl = νFace n p p≤n ε D (νSet .this) (d .₁)
-νSet-Face m n p {1+ δ} m≤n D νSet p≤n ε d =
-  νSet-Face (1+ m) n p (←₂ m≤n) _ (νSet .next) p≤n ε d
+νSet-Face-≤ : ∀ m → (D : νSet-< m) (E : fullframe D .Dom → HSet)
+            → Face-≤ m (νSet-F0-< m D) (TotalSpace D E)
+νSet-Face-≤ zero D E = tt
+νSet-Face-≤ (1+ m) D E = νSet-Face-≤ m (D .₁) (D .₂) ,  λ p p≤n ε d → νFace m p p≤n ε D (d .₁)
 
-νSet-Face-coh : ∀ m n p q {δ δ'}
-              → (m≤n : [ m ≤ n ][ δ ]₂)
-              → (D : Ctx m) (νSet : νSet-> m D)
-              → (p≤q≤n : [ p ≤ q ≤ n ][ δ' ]₃) 
-              → (ε ω : arity)
-              → (d : νSet-X m (2+ n) (↑₂ ↑₂ m≤n) D νSet .Dom)
-              → νSet-Face m n q m≤n D νSet (drop₃-1 p≤q≤n) ε 
-                 (νSet-Face m (1+ n) p (↑₂ m≤n) D νSet (↑₂ drop₃-2 p≤q≤n) ω d)
-              ≡ νSet-Face m n p m≤n D νSet (drop₃-2 p≤q≤n) ω
-                 (νSet-Face m (1+ n) (1+ q) (↑₂ m≤n) D νSet (⇑₂ drop₃-1 p≤q≤n) ε d)
-νSet-Face-coh m n p q {zero} (ineq₂ Hmn) D νSet p≤q≤n ε ω d with recover-nat-eq m n Hmn
-... | refl = νFace-coh n p q p≤q≤n ε ω _ _ _ (d .₁)
-νSet-Face-coh m n p q {1+ δ} m≤n D νSet p≤q≤n ε ω d =
-  νSet-Face-coh (1+ m) n p q (←₂ m≤n) _ (νSet .next) p≤q≤n ε ω d
+νSet-Face-< : ∀ m → (D : νSet-< m)
+            → Face-< m (νSet-F0-< m D)
+νSet-Face-< zero D = tt
+νSet-Face-< (1+ m) D = νSet-Face-≤ m (D .₁) (D .₂)
 
+νSet-F0-≥ : ∀ m → (D : νSet-< m) → νSet-> m D → ℕ → HSet
+νSet-F0-≥ m D νSet 0      = TotalSpace D (νSet .this)
+νSet-F0-≥ m D νSet (1+ n) = νSet-F0-≥ (1+ m) (D , νSet .this) (νSet .next) n
+
+νSet-Face-> : ∀ m → (D : νSet-< m) (νSet : νSet-> m D)
+            → ∀ n p {δ}
+            → [ p ≤ n + m ][ δ ]₂ → arity
+            → νSet-F0-≥ m D νSet (1+ n) .Dom
+            → νSet-F0-≥ m D νSet n .Dom
+νSet-Face-> m D νSet 0 p p≤m ε d = νFace m p p≤m ε (D , νSet .this) (d .₁)
+νSet-Face-> m D νSet (1+ n) = νSet-Face-> (1+ m) (D , νSet .this) (νSet .next) n
+
+νSet-Coh-> : ∀ m → (D : νSet-< m) (νSet : νSet-> m D)
+            → ∀ n p q {δ}
+            → (p≤q≤n : [ p ≤ q ≤ n + m ][ δ ]₃) 
+            → (ε ω : arity)
+            → (d : νSet-F0-≥ m D νSet (2+ n) .Dom)
+            → νSet-Face-> m D νSet n q (drop₃-1 p≤q≤n) ε
+               (νSet-Face-> m D νSet (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω d)
+            ≡ νSet-Face-> m D νSet n p (drop₃-2 p≤q≤n) ω
+               (νSet-Face-> m D νSet (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε d)
+νSet-Coh-> m D νSet zero p q p≤q≤m ε ω d =  νFace-coh m p q p≤q≤m ε ω (_ , νSet .next .this) (d .₁)
+νSet-Coh-> m D νSet (1+ n) = νSet-Coh-> (1+ m) (D , νSet .this) (νSet .next) n
+
+postulate
+ admit : {A : Set} → A
+ 
 g : νSet → Presheaf
-g νSet .F0 n = νSet-X 0 n (0≤n n) [] νSet
-g νSet .Face n p = νSet-Face 0 n p (0≤n n) [] νSet
-g νSet .Face-coh n p q = νSet-Face-coh 0 n p q (0≤n n) [] νSet
+g νSet .F0 = νSet-F0-≥ 0 tt νSet
+g νSet .Face = νSet-Face-> 0 tt νSet
+g νSet .Face-coh = νSet-Coh-> 0 tt νSet
 
-f∘g-this : ∀ m
-         → (D : Ctx m) (νSet : νSet-> m D)
-         → (D' : Ctx m) (E' : fullframe D' .Dom → HSet)
-         → (D-≃ : Ctx-≃ (D' ∷ E') (D ∷ νSet .this))
-         → (f : TotalSpace D' E' .Dom → νSet-X m m (◆₂ m) D νSet .Dom)
-         → (f-≡ : ∀ p {δ} (p≤n : [ p ≤ m ][ δ ]₂) ε d
-                → f (νFace m p p≤n ε D' E' d)
-                ≡ νFace m p p≤n ε D (νSet .this) (subst (λ - → fullframe - .Dom) (Ctx-≃→≡ D-≃) d))
-         → (d : fullframe (D ∷ νSet .this) .Dom)
-         → Presheaf-this m D' E'
-             (λ n m≤n → νSet-X m n m≤n _ νSet)
-             (λ n p m≤n p≤n → νSet-Face m n p m≤n _ νSet p≤n) f
-             (subst (λ - → fullframe - .Dom) (sym (Ctx-≃→≡ D-≃)) d) .Dom
-         ≃ νSet .next .this d .Dom
-f∘g-this m D νSet D' E' D-≃ f f-≡ d = f' , {!!}
+νSet→zipper : ∀ m (D : νSet-< m) (νSet : νSet-> m D) → Presheaf-zipper m
+νSet→zipper m D νSet .|F0-<| = νSet-F0-< m D
+νSet→zipper m D νSet .|F0-≥| = νSet-F0-≥ m D νSet
+νSet→zipper m D νSet .|Face-≤| = νSet-Face-≤ m D (νSet .this)
+νSet→zipper m D νSet .|Face->| = νSet-Face-> m D νSet
+
+f∘g-νSet₁ : (D : νSet-< 1) → (d : ⊤) → TotalSpace (D .₁) (D .₂) .Dom ≃ D .₂ d .Dom
+f∘g-νSet₁ D d = ₂ , ((tt ,_) , λ _ → refl) , ((tt ,_) , λ _ → refl)
+
+f∘g-νSet-< : ∀ m
+           → (D : νSet-< m)
+           → νSet-<-≃ (Presheaf-Ctx m (νSet-F0-< m D) (νSet-Face-< m D)) D
+
+f∘g-νSetₙ : ∀ m
+          → (D : νSet-< (1+ m)) (E : fullframe D .Dom → HSet)
+          → (d : fullframe D .Dom)
+          → (Σ[ d' ∈ TotalSpace D E .Dom ] ((r : RestrInfo m)
+             → Presheaf-νFace m
+                (νSet-F0-< (1+ m) D)
+                (νSet-Face-< (1+ m) D)
+                _ (r .restr-p≤n) (r .restr-ε)
+                (subst (λ - → fullframe - .Dom) (sym (νSet-<-≃→≡ (f∘g-νSet-< (1+ m) D))) d)
+             ≡ νFace m _ (r .restr-p≤n) (r .restr-ε) D (d' .₁)))
+          ≃ E d .Dom
+
+f∘g-νFace-≡ : ∀ m
+            → (D : νSet-< (1+ m))
+            → (d : fullframe D .Dom)
+            → ∀ p {δ} (p≤m : [ p ≤ m ][ δ ]₂) ε
+            → Presheaf-νFace m
+                (νSet-F0-< (1+ m) D)
+                (νSet-Face-< (1+ m) D)
+                _ p≤m ε
+                (subst (λ - → fullframe - .Dom) (sym (νSet-<-≃→≡ (f∘g-νSet-< (1+ m) D))) d)
+            ≡ νFace m p p≤m ε D d
+
+f∘g-νSet-< 0 D = ≃[]
+f∘g-νSet-< 1 D = ≃[] ≃∷ f∘g-νSet₁ D
+f∘g-νSet-< (2+ m) D = f∘g-νSet-< (1+ m) (D .₁) ≃∷ f∘g-νSetₙ m (D .₁) (D .₂)
+
+f∘g-νSetₙ m D E d = f' , (g' , g'∘f'∼id) , (g' , f'∘g'∼id)
  where
- f' : Presheaf-this m D' E'
-        (λ n m≤n → νSet-X m n m≤n _ νSet)
-        (λ n p m≤n p≤n → νSet-Face m n p m≤n _ νSet p≤n) f
-        (subst (λ - → fullframe - .Dom) (sym (Ctx-≃→≡ D-≃)) d) .Dom
-    → νSet .next .this d .Dom
- f' ((d' , c) , coh) = subst (λ - → νSet .next .this - .Dom)
-  ((νFace-≡ m _ _ _ _ λ p p≤n ε → sym (coh (info p _ ε p≤n)) ∙ f-≡ p p≤n ε _) ∙ subst-sym-r (Ctx-≃→≡ D-≃) d) c
-
-f∘g-next : ∀ m
-         → (D : Ctx m) (νSet : νSet-> m D)
-         → (D' : Ctx m) (E' : fullframe D' .Dom → HSet)
-         → (D-≃ : Ctx-≃ (D' ∷ E') (D ∷ νSet .this))
-         → (f : TotalSpace D' E' .Dom → νSet-X m m (◆₂ m) D νSet .Dom)
-         → (f-≡ : ∀ p {δ} (p≤n : [ p ≤ m ][ δ ]₂) ε d
-                → f (νFace m p p≤n ε D' E' d)
-                ≡ νFace m p p≤n ε D (νSet .this) (subst (λ - → fullframe - .Dom) (Ctx-≃→≡ D-≃) d))
-         → νSet->-≃ D-≃
-             (Presheaf-next m D' E'
-               (λ n m≤n → νSet-X m n m≤n _ νSet)
-               (λ n p m≤n p≤n → νSet-Face m n p m≤n _ νSet p≤n) f)
-               (νSet .next)
-f∘g-next m D νSet D' E' D-≃ f f-≡ .this-≃ d =
-  f∘g-this m D νSet D' E' D-≃ f f-≡ d 
-f∘g-next m D νSet D' E' D-≃ f f-≡ .next-≃ =
- f∘g-next (1+ m) (D ∷ νSet .this) (νSet .next) (D' ∷ E') E''
-   (D-≃ ∷≃ f∘g-this m D νSet D' E' D-≃ f f-≡)
-   (λ dc → dc .₂ .₁)
-   f-≡'
- where
- E'' : fullframe (D' ∷ E') .Dom → HSet
- E'' = Presheaf-this m D' E'
-         (λ n m≤n → νSet-X m n m≤n _ νSet)
-         (λ n p m≤n p≤n → νSet-Face m n p m≤n _ νSet p≤n)
-         f
-
- f-≡' : ∀ p {δ} (p≤n : [ p ≤ 1+ m ][ δ ]₂) ε d
-      → νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₁
-      ≡ νFace (1+ m) p p≤n ε (D ∷ νSet .this) (νSet .next .this)
+ f' : Σ[ dc ∈ TotalSpace D E .Dom ] ((r : RestrInfo m) →
+      Presheaf-νFace m (νSet-F0-< (1+ m) D) (νSet-Face-< (1+ m) D)
+         (r .restr-p) (r .restr-p≤n) (r .restr-ε)
          (subst (λ - → fullframe - .Dom)
-         (Ctx-≃→≡ (D-≃ ∷≃ f∘g-this m D νSet D' E' D-≃ f f-≡)) d)
- f-≡' p p≤n ε d =
-   νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₁
-     ≡⟨⟩
-   νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₁ .₁ ,
-   νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₁ .₂
-     ≡⟨ Σ-≡→≡ (νFace-≡ m D (νSet .this) _ _
-         (λ q q≤n ω → sym (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₂ (info q _ ω q≤n))
-                    ∙ f-≡ q q≤n ω (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₁))
-         , refl) ⟩
-   subst (λ - → fullframe - .Dom) (Ctx-≃→≡ D-≃)
-     (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₁) ,
-   subst (λ - → νSet .next .this - .Dom)
-       (νFace-≡ m D (νSet .this) _ _
-         (λ q q≤n ω →
-            sym (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₂ (info q _ ω q≤n))
-         ∙ f-≡ q q≤n ω (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₁)))
-      (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂ .₁ .₂)
-     ≡⟨ Σ-≡→≡ (refl , {!!}) ⟩
-   subst (λ - → fullframe - .Dom) (Ctx-≃→≡ D-≃)
-     (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₁) ,
-   subst (λ - → νSet .next .this - .Dom)
-     (νFace-≡ m D (νSet .this) _ _
-       (λ q q≤n ω →
-           sym ((subst (λ - → E'' - .Dom) (sym (subst-sym-l (Ctx-≃→≡ D-≃) _))
-            (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂)) .₂ (info q _ ω q≤n))
-       ∙ f-≡ q q≤n ω _)
-     ∙ subst-sym-r (Ctx-≃→≡ D-≃) _)
-     (subst (λ - → E'' - .Dom) (sym (subst-sym-l (Ctx-≃→≡ D-≃) _))
-       (νFace (1+ m) p p≤n ε (D' ∷ E') E'' d .₂) .₁ .₂)
-     ≡⟨ sym (Ctx-≃-Face-subst D-≃ (f∘g-this m D νSet D' E' D-≃ f f-≡) p p≤n ε d)  ⟩
-   νFace (1+ m) p p≤n ε (D ∷ νSet .this) (νSet .next .this)
-     (subst (λ - → fullframe - .Dom)
-     (Ctx-≃→≡ (D-≃ ∷≃ f∘g-this m D νSet D' E' D-≃ f f-≡)) d) ∎ 
+          (sym (νSet-<-≃→≡ (f∘g-νSet-< (1+ m) D))) d)
+     ≡ νFace m (r .restr-p) (r .restr-p≤n) (r .restr-ε) D (dc .₁))
+   → E d .Dom
+ f' ((d' , c) , coh) = subst (λ - → E - .Dom)
+   (νFace-≡ m D d' d λ p p≤n ε → sym (coh (info p _ ε p≤n)) ∙ f∘g-νFace-≡ m D d p p≤n ε) c
 
-f∘g-base : ∀ νSet d → f (g νSet) .this d .Dom ≃ νSet .this d .Dom
-f∘g-base νSet d = (λ t → {!!}) , {!!} , {!!}
---₂ , ((tt ,_) , (λ _ → refl)) , ((tt ,_) , λ _ → refl)
+ g' : E d .Dom
+    → Σ[ dc ∈ TotalSpace D E .Dom ] ((r : RestrInfo m) →
+      Presheaf-νFace m (νSet-F0-< (1+ m) D) (νSet-Face-< (1+ m) D)
+         (r .restr-p) (r .restr-p≤n) (r .restr-ε)
+         (subst (λ - → fullframe - .Dom)
+          (sym (νSet-<-≃→≡ (f∘g-νSet-< (1+ m) D))) d)
+     ≡ νFace m (r .restr-p) (r .restr-p≤n) (r .restr-ε) D (dc .₁))
+ g' c = (_ , c) , λ r → f∘g-νFace-≡ m D d (r .restr-p) (r .restr-p≤n) (r .restr-ε)
+
+ g'∘f'∼id : ∀ c → g' (f' c) ≡ c
+ g'∘f'∼id ((d' , c) , coh) = Σ-≡→≡ (Σ-≡→≡
+   ( sym (νFace-≡ m D d' d λ p p≤n ε → sym (coh (info p _ ε p≤n))
+         ∙ f∘g-νFace-≡ m D d p p≤n ε)
+   , subst-sym-l
+       ((νFace-≡ m D d' d λ p p≤n ε → sym (coh (info p _ ε p≤n))
+        ∙ f∘g-νFace-≡ m D d p p≤n ε)) c)
+   , funExt λ r → TotalSpace (D .₁) (D .₂) .has-UIP _ _ _ (coh r)) 
+ 
+ f'∘g'∼id : ∀ c → f' (g' c) ≡ c
+ f'∘g'∼id c = cong (λ - → subst (λ - → E - .Dom) - c) (fullframe D .has-UIP _ _ _ refl) 
+
+f∘g-νFace-≡ 0 D d p p≤m ε =
+  νFace 0 p p≤m ε (tt , (λ d₁ → TotalSpace (D .₁) (D .₂)))
+    (subst (λ - → fullframe - .Dom) (sym (νSet-<-≃→≡ (≃[] ≃∷ f∘g-νSet₁ D))) d) .₂
+    ≡⟨ cong ₂ (νFace-νSet-<-≃ 0 _ _  (λ _ → TotalSpace (D .₁) (D .₂)) (D .₂) ≃[] (f∘g-νSet₁ D) d p p≤m ε) ⟩
+  invEq (f∘g-νSet₁ D (νFace 0 p p≤m ε (tt , D .₂) d .₁)) (νFace 0 p p≤m ε (tt , D .₂) d .₂)
+    ≡⟨⟩
+  νFace zero p p≤m ε D d ∎ 
+f∘g-νFace-≡ (1+ m) D d p p≤m ε =
+   Presheaf-νFace (1+ m) (νSet-F0-< (2+ m) D) (νSet-Face-≤ (1+ m) (D .₁) (D .₂))
+     _ p≤m ε
+     (subst (λ - → fullframe - .Dom) (sym (νSet-<-≃→≡ (f∘g-νSet-< (2+ m) D))) d)
+    ≡⟨ cong (λ - → - .₂ .₁) (νFace-νSet-<-≃ (1+ m)
+         (Presheaf-Ctx (1+ m) (νSet-F0-< (1+ m) (D .₁)) (νSet-Face-≤ m (D .₁ .₁) (D .₁ .₂)))
+         (D .₁)
+         (λ d → HΣ[ d' ∈ TotalSpace (D .₁) (D .₂) ] HΠ[ r ∈ RestrInfo m ]
+          H≡ (TotalSpace (D .₁ .₁) (D .₁ .₂))
+             (Presheaf-νFace m _ _ _ (r .restr-p≤n) (r .restr-ε) d)
+             (νSet-Face-≤ (1+ m) (D .₁) (D .₂) .₂ _ (r .restr-p≤n) (r .restr-ε) d'))
+         (D .₂)
+         (f∘g-νSet-< (1+ m) (D .₁))
+         (f∘g-νSetₙ m (D .₁) (D .₂)) d p p≤m ε) ⟩
+   invEq (f∘g-νSetₙ m (D .₁) (D .₂) (νFace (1+ m) p p≤m ε D d .₁))
+     (νFace (1+ m) p p≤m ε D d .₂) .₁
+    ≡⟨ refl ⟩
+   νFace (1+ m) p p≤m ε D d ∎
+
+f∘g-νSet-> : ∀ m
+           → (D : νSet-< (1+ m)) (νSet : νSet-> (1+ m) D)
+           → νSet->-≃ (f∘g-νSet-< (1+ m) D)
+              (Presheaf-next (1+ m) (νSet→zipper (1+ m) D νSet))
+              νSet
+f∘g-νSet-> m D νSet .this-≃ = f∘g-νSetₙ m D (νSet .this)
+f∘g-νSet-> m D νSet .next-≃ = f∘g-νSet-> (1+ m) (D , νSet .this) (νSet .next)
 
 f∘g : ∀ νSet → νSet-≃ (f (g νSet)) νSet 
-f∘g νSet .this-≃ = f∘g-base νSet
-f∘g νSet .next-≃ = {!f∘g-next 0 [] νSet [] ? ([]≃ ∷≃ f∘g-base νSet) (λ c → c .₂) ?!}
+f∘g νSet .this-≃ = f∘g-νSet₁ (tt , νSet .this)
+f∘g νSet .next-≃ = f∘g-νSet-> 0 (tt , νSet .this) (νSet .next)
