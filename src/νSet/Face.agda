@@ -38,19 +38,6 @@ getPainting n p q {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) D E d (l , c
   let 1+p≤q≤n = ineq₃ δpn δqn Hpq Hpn Hqn Hpqn in
   getPainting n (1+ p) q {δ} 1+p≤q≤n D E (d , l) c
 
-ungetPainting : ∀ n p q {δ} (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
-              → (D : νSet-< n) (E : νSet-= n D)
-              → (d : frame n q (drop₃-1 p≤q≤n) D .Dom)
-              → (c : painting n q (drop₃-1 p≤q≤n) D E d .Dom)
-              → Σ[ d ∈ frame n p (drop₃-2 p≤q≤n) D .Dom ]
-                painting n p (drop₃-2 p≤q≤n) D E d .Dom
-ungetPainting n p q {zero} (ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) D E d c
-  with recover-nat-eq p q Hpq | recover-nat-eq δqn δpn Hpqn
-... | refl | refl = d , c
-ungetPainting n p (1+ q) {1+ δ} p≤1+q≤n@(ineq₃ δpn δqn Hpq Hpn Hqn Hpqn) D E (d , l) c =
-   let p≤q≤n = ineq₃ δpn (1+ δqn) Hpq Hpn Hqn Hpqn in
-   ungetPainting n p q {δ} p≤q≤n D E d (l , c) 
-
 getFrame-compose : ∀ n p q r {δ} → (p≤r≤q≤n : [ p ≤ r ≤ q ≤ n ][ δ ]₄) 
                  → (D : νSet-< n)
                  → (d : frame n q (drop₃-1 (drop₄-1 p≤r≤q≤n)) D .Dom)
