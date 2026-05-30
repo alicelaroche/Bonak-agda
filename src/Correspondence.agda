@@ -63,39 +63,38 @@ psh→zipper psh .|F0-≥| = psh .F0
 psh→zipper psh .|Face-≤| = tt
 psh→zipper psh .|Face->| = psh .Face
 
-Presheaf-Ctx : ∀ m → (F0 : F0-< (1+ m)) → (Face : Face-≤ m F0) → νSet-< m
+Presheaf-νSet-< : ∀ m → (F0 : F0-< (1+ m)) → (Face : Face-≤ m F0) → νSet-< m
 Presheaf-νFace : ∀ m → (F0 : F0-< (2+ m)) → (Face : Face-≤ (1+ m) F0) 
                → ∀ p {δ} → [ p ≤ m ][ δ ]₂ → arity
-               → fullframe (Presheaf-Ctx (1+ m) F0 Face) .Dom
+               → fullframe (Presheaf-νSet-< (1+ m) F0 Face) .Dom
                → F0 .₁ .₂ .Dom
 
-
-Presheaf-Ctx 0 F0 Face = tt
-Presheaf-Ctx 1 F0 Face = tt , λ d → F0 .₁ .₂
-Presheaf-Ctx (2+ m) F0 Face =
- Presheaf-Ctx (1+ m) (F0 .₁) (Face .₁) ,
+Presheaf-νSet-< 0 F0 Face = tt
+Presheaf-νSet-< 1 F0 Face = tt , λ d → F0 .₁ .₂
+Presheaf-νSet-< (2+ m) F0 Face =
+ Presheaf-νSet-< (1+ m) (F0 .₁) (Face .₁) ,
  λ d → HΣ[ d' ∈ F0 .₁ .₂ ] HΠ[ r ∈ RestrInfo m ]
        H≡ (F0 .₁ .₁ .₂)
           (Presheaf-νFace m (F0 .₁) (Face .₁) _ (r .restr-p≤n) (r .restr-ε) d)
           (Face .₁ .₂ _ (r .restr-p≤n) (r .restr-ε) d')
 
-Presheaf-νFace zero F0 Face p p≤m ε d = (νFace 0 p p≤m ε (Presheaf-Ctx 1 F0 Face) d) .₂
-Presheaf-νFace (1+ m) F0 Face p p≤m ε d = (νFace (1+ m) p p≤m ε (Presheaf-Ctx (2+ m) F0 Face) d) .₂ .₁
+Presheaf-νFace zero F0 Face p p≤m ε d = (νFace 0 p p≤m ε (Presheaf-νSet-< 1 F0 Face) d) .₂
+Presheaf-νFace (1+ m) F0 Face p p≤m ε d = (νFace (1+ m) p p≤m ε (Presheaf-νSet-< (2+ m) F0 Face) d) .₂ .₁
 
-Presheaf-next : ∀ m
+Presheaf-νSet-> : ∀ m
               → (zipper : Presheaf-zipper m)
-              → νSet-> m (Presheaf-Ctx m (zipper .|F0-<| , zipper .|F0-≥| 0) (zipper .|Face-≤|))
-Presheaf-next zero zipper .this d =  zipper .|F0-≥| 0
-Presheaf-next zero zipper .next = Presheaf-next 1 (bump-zipper 0 zipper) 
-Presheaf-next (1+ m) zipper .this d =
+              → νSet-> m (Presheaf-νSet-< m (zipper .|F0-<| , zipper .|F0-≥| 0) (zipper .|Face-≤|))
+Presheaf-νSet-> zero zipper .this d =  zipper .|F0-≥| 0
+Presheaf-νSet-> zero zipper .next = Presheaf-νSet-> 1 (bump-zipper 0 zipper) 
+Presheaf-νSet-> (1+ m) zipper .this d =
   HΣ[ d' ∈ zipper .|F0-≥| 0 ] HΠ[ r ∈ RestrInfo m ]
   H≡ (zipper .|F0-<| .₂)
      (Presheaf-νFace m (zipper .|F0-<| , zipper .|F0-≥| 0) (zipper .|Face-≤|) (r .restr-p) (r .restr-p≤n) (r .restr-ε) d)
      (zipper .|Face-≤| .₂ (r .restr-p) (r .restr-p≤n) (r .restr-ε) d')
-Presheaf-next (1+ m) zipper .next = Presheaf-next (2+ m) (bump-zipper (1+ m) zipper)
+Presheaf-νSet-> (1+ m) zipper .next = Presheaf-νSet-> (2+ m) (bump-zipper (1+ m) zipper)
 
 f : Presheaf → νSet
-f psh = Presheaf-next 0 (psh→zipper psh)
+f psh = Presheaf-νSet-> 0 (psh→zipper psh)
 
 νSet-F0-< : ∀ m → νSet-< m → F0-< m 
 νSet-F0-< zero D = tt
@@ -146,7 +145,7 @@ f∘g-νSet₁ D d = ₂ , ((tt ,_) , λ _ → refl) , ((tt ,_) , λ _ → refl)
 
 f∘g-νSet-< : ∀ m
            → (D : νSet-< (1+ m))
-           → νSet-<-≃ (Presheaf-Ctx m (νSet-F0-< (1+ m) D) (νSet-Face-≤ m D)) (D .₁)
+           → νSet-<-≃ (Presheaf-νSet-< m (νSet-F0-< (1+ m) D) (νSet-Face-≤ m D)) (D .₁)
 
 f∘g-νSetₙ : ∀ m
           → (D : νSet-< (2+ m))
@@ -220,7 +219,7 @@ f∘g-νFace-≡ (1+ m) (D , E) d p p≤m ε =
    Presheaf-νFace (1+ m) (νSet-F0-< (3+ m) (D , E) ) (νSet-Face-≤ (2+ m) (D , E))
      _ p≤m ε (subst (λ - → fullframe - .Dom) (sym (νSet-<-≃→≡ (f∘g-νSet-< (2+ m) (D , E)))) d)
     ≡⟨ cong (λ - → - .₂ .₁) (νFace-νSet-<-≃ (1+ m)
-           (Presheaf-Ctx (1+ m) (νSet-F0-< (2+ m) D) (νSet-Face-≤ (1+ m) D))
+           (Presheaf-νSet-< (1+ m) (νSet-F0-< (2+ m) D) (νSet-Face-≤ (1+ m) D))
            (D .₁)
            (λ d → HΣ[ d' ∈ TotalSpace (D .₁) (D .₂) ] HΠ[ r ∈ RestrInfo m ]
                    H≡ (TotalSpace (D .₁ .₁) (D .₁ .₂))
@@ -236,7 +235,7 @@ f∘g-νFace-≡ (1+ m) (D , E) d p p≤m ε =
 f∘g-νSet-> : ∀ m
            → (D : νSet-< (1+ m)) (νSet : νSet-> (1+ m) D)
            → νSet->-≃ (f∘g-νSet-< (1+ m) (D , νSet .this))
-              (Presheaf-next (1+ m) (νSet→zipper (1+ m) D νSet))
+              (Presheaf-νSet-> (1+ m) (νSet→zipper (1+ m) D νSet))
               νSet
 f∘g-νSet-> m D νSet .this-≃ = f∘g-νSetₙ m (D , νSet .this)
 f∘g-νSet-> m D νSet .next-≃ = f∘g-νSet-> (1+ m) (D , νSet .this) (νSet .next)
