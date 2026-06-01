@@ -107,16 +107,16 @@ getPaintingRestr n p (1+ q) {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) ε
   let 1+p≤q≤n = ineq₃ δpn δqn Hpq Hpn Hqn Hpqn in
   getPaintingRestr n (1+ p) (1+ q) {δ} 1+p≤q≤n ε D E (d , l) c
 
-opaque
-  νFace : ∀ n p {δ} (p≤n : [ p ≤ n ][ δ ]₂) → arity
-       → (D : νSet-< (1+ n))
-       → (d : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom)
-       → Σ[ d ∈ frame n n (◆₂ n) (D .₁) .Dom ]
-        (painting n n (◆₂ n) (D .₁) (D .₂) d .Dom)
-  νFace n p p≤n ε D d =
-   getPainting n p n (◆₃' p≤n) (D .₁) (D .₂) _
-     (getFrame (1+ n) (1+ p) (1+ n) (⇑₃ ◆₃' p≤n) D d .₂ ε)
+νFace : ∀ n p {δ} (p≤n : [ p ≤ n ][ δ ]₂) → arity
+     → (D : νSet-< (1+ n))
+     → (d : frame (1+ n) (1+ n) (◆₂ 1+ n) D .Dom)
+     → Σ[ d ∈ frame n n (◆₂ n) (D .₁) .Dom ]
+      (painting n n (◆₂ n) (D .₁) (D .₂) d .Dom)
+νFace n p p≤n ε D d =
+ getPainting n p n (◆₃' p≤n) (D .₁) (D .₂) _
+   (getFrame (1+ n) (1+ p) (1+ n) (⇑₃ ◆₃' p≤n) D d .₂ ε)
   
+opaque
   νFace-coh : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
            → (ε ω : arity)
            → (D : νSet-< (2+ n))

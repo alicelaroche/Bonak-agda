@@ -101,6 +101,12 @@ subst-dup : ∀ {ℓ ℓ'} {A : Type ℓ} (B : A → A → Type ℓ') {a a' : A}
             ≡ subst (λ - → B - a') p (subst (B a) p b)
 subst-dup B refl b = refl
 
+subst-inj : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} {a a' : A} {b b' : B a}
+          → (p : a ≡ a')
+          → subst B p b ≡ subst B p b'
+          → b ≡ b'
+subst-inj refl = id
+
 subst-const : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} {a a' : A}
             → (p : a ≡ a') (b : B)
             → subst (λ - → B) p b ≡ b
@@ -168,7 +174,6 @@ subst-application _ _ refl = refl
 cong-id : ∀ {ℓ} {A : Type ℓ} {a a' : A} → (p : a ≡ a') → cong id p ≡ p
 cong-id refl = refl
 
-
 cong-∘ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''}
        → {a a' : A} → (f : A → B) → (g : B → C)
        → (p : a ≡ a')
@@ -193,6 +198,9 @@ happly-sym refl = refl
 
 J : ∀ {ℓ ℓ'} {A : Type ℓ} {x : A} (P : (y : A) → x ≡ y → Type ℓ') → P x refl → {y : A} (p : x ≡ y) → P y p
 J P p refl = p
+
+J' : ∀ {ℓ ℓ'} {A : Type ℓ} {x : A} (P : (y : A) → y ≡ x → Type ℓ') → P x refl → {y : A} (p : y ≡ x) → P y p
+J' P p refl = p
 
 module _ {ℓ} {A : Type ℓ} where
   infixr 2 step-≡ step-≡⁻¹ _≡⟨⟩_
