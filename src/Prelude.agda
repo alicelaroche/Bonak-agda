@@ -1,6 +1,7 @@
 module Prelude where
 
-open import Agda.Primitive renaming (Set to Type; Setω to Typeω) public
+--open import Agda.Primitive renaming (Set to Type; Setω to Typeω) public
+open import Agda.Primitive public
 
 id : ∀ {ℓ} {A : Type ℓ} → A → A
 id x = x
@@ -15,8 +16,7 @@ infix 4 _≡_
 data _≡_ {ℓ} {A : Type ℓ} (x : A) : A → Type ℓ where
   refl : x ≡ x
 
-{-# BUILTIN EQUALITY _≡_  #-}
-{-# BUILTIN REWRITE _≡_  #-}
+{-# BUILTIN EQUALITY _≡_ #-}
 
 sym : ∀ {ℓ} {A : Type ℓ} {a a' : A} → a ≡ a' → a' ≡ a
 sym refl = refl
@@ -65,14 +65,14 @@ dsubst A B refl b = b
 transport : ∀ {ℓ} {A B : Type ℓ} → A ≡ B → A → B
 transport = subst (λ x → x) 
 
-dcong : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} (f : (x : A) → B x) {x y}
+dcong : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} (f : (x : A) → B x) {x y}
       → (p : x ≡ y) → subst B p (f x) ≡ f y
 dcong f refl = refl
 
-cong₂ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {C : Type ℓ''} {a a' : A} {b : B a}
-      → (f : (a : A) → B a → C)
-      → (p : a ≡ a') → f a b ≡ f a' (subst B p b)
-cong₂ f refl = refl
+cong₂ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''} {a a' : A} {b b' : B}
+      → (f : A → B → C)
+      → (p : a ≡ a') → (q : b ≡ b') → f a b ≡ f a' b'
+cong₂ f refl refl = refl
 
 trans-assoc : ∀ {ℓ} {A : Type ℓ} {x y z w : A}
             → (p : x ≡ y) (q : y ≡ z) (r : z ≡ w)
@@ -240,42 +240,42 @@ infixr 4 _×_
 _×_ : ∀ {ℓ ℓ'} (A : Type ℓ) (B : Type ℓ') → Type (ℓ ⊔ ℓ')
 _×_ A B = Σ A (λ _ → B)
 
-Σ-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} → Σ A B → Σ A B → Type (ℓ ⊔ ℓ')
+Σ-≡ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} → Σ A B → Σ A B → Type (ℓ ⊔ ℓ')
 Σ-≡ {B = B} (a , b) (a' , b') = Σ[ eq ∈ a ≡ a' ] (subst B eq b ≡ b')
 
-Σ-≡-assoc : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : A → Set ℓ'} {C : Σ[ x ∈ A ] B x → Set ℓ''}
+Σ-≡-assoc : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : A → Type ℓ'} {C : Σ[ x ∈ A ] B x → Type ℓ''}
           → {a a' : A} {b : B a} {b' : B a'} {c : C (a , b)} {c' : C (a' , b')}
           → Σ-≡ ((a , b) , c) ((a' , b') , c')
           → Σ-≡ (a , (b , c)) (a' , (b' , c'))
 Σ-≡-assoc (refl , refl) = refl , refl
 
-Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
       → {x y : Σ A B} → Σ-≡ x y → x ≡ y
 Σ-≡→≡  (refl , refl) = refl
 
-≡→Σ-≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+≡→Σ-≡ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
       → {x y : Σ A B} → x ≡ y → Σ-≡ x y
 ≡→Σ-≡  refl = (refl , refl)
 
-≡→Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+≡→Σ-≡→≡ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
         → {x y : Σ A B} → (p : x ≡ y) → p ≡ Σ-≡→≡ (≡→Σ-≡ p)
 ≡→Σ-≡→≡ refl = refl
 
-Σ-≡-sym : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+Σ-≡-sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
         → {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂}
         → (p : a₁ ≡ a₂)
         → (q : subst (λ x → B x) p b₁ ≡ b₂)
         → sym (Σ-≡→≡ (p , q)) ≡ Σ-≡→≡ (sym p , sym (cong (subst B (sym p)) q) ∙ subst-sym-l p b₁)
 Σ-≡-sym refl refl = refl
 
-subst-Σ : ∀ {ℓ ℓ' ℓ''} {X : Set ℓ} {A : X → Set ℓ'} {B : Σ[ x ∈ X ] A x → Set ℓ''}
+subst-Σ : ∀ {ℓ ℓ' ℓ''} {X : Type ℓ} {A : X → Type ℓ'} {B : Σ[ x ∈ X ] A x → Type ℓ''}
         → {x₁ x₂ : X} {a : A x₁} {b : B (x₁ , a)}
         → (p : x₁ ≡ x₂)
         → subst (λ - → Σ[ a ∈ A - ] (B (- , a))) p (a , b)
         ≡ (subst A p a , subst B (Σ-≡→≡ (p , refl)) b)
 subst-Σ refl = refl
 
-subst-Σ' : ∀ {ℓ ℓ' ℓ''} {X : Set ℓ} {A : X → Set ℓ'} {B : Σ[ x ∈ X ] A x → Set ℓ''}
+subst-Σ' : ∀ {ℓ ℓ' ℓ''} {X : Type ℓ} {A : X → Type ℓ'} {B : Σ[ x ∈ X ] A x → Type ℓ''}
          → {x₁ x₂ : X} {a : A x₁} {a' : A x₂} {b : B (x₁ , a)}
          → (p : x₁ ≡ x₂)
          → (q : subst (λ x → A x) p a ≡ a')
@@ -286,7 +286,6 @@ subst-Σ' p refl = refl
 data _⊎_ {ℓ} {ℓ'} (A : Type ℓ) (B : Type ℓ') : Type (ℓ ⊔ ℓ') where
   inl : A → A ⊎ B
   inr : B → A ⊎ B
-
 
 data ℕ : Type where
   zero : ℕ
@@ -327,6 +326,76 @@ pred (suc n) = n
 +-assoc zero m o = refl
 +-assoc (1+ n) m o = cong suc (+-assoc n m o)
 
+data _≤_ : ℕ → ℕ → Type where
+  0≤n : ∀ {n} → 0 ≤ n
+  s≤s : ∀ {n m} → n ≤ m → 1+ n ≤ 1+ m
+
+↑_ : ∀ {n m} → n ≤ m → n ≤ 1+ m
+↑_ {0} {m} 0≤n = 0≤n
+↑_ {1+ n} {1+ m} (s≤s n≤m) = s≤s (↑ n≤m)
+
+⇓_ : ∀ {n m} → 1+ n ≤ 1+ m → n ≤ m
+⇓ s≤s n≤m = n≤m
+
+_↕_ : ∀ {n m p} → n ≤ m → m ≤ p → n ≤ p
+_↕_ {zero} {m} {p} 0≤n m≤p = 0≤n
+_↕_ {1+ n} {1+ m} {1+ p} (s≤s n≤m) (s≤s m≤p) = s≤s (n≤m ↕ m≤p)
+
 infixl 20 _+_
 
-{-# REWRITE +-zero-r +-suc-r #-}
+data Fin : ∀ n → Type where
+  𝟎 : ∀ {n} → Fin (1+ n)
+  𝐒 : ∀ {n} → Fin n → Fin (1+ n)
+
+IVec : ∀ {ℓ} (n : ℕ) → (A : Fin n → Type ℓ) → Type ℓ
+IVec 0 A = ⊤
+IVec (1+ n) A = IVec n (λ n → A (𝐒 n)) × A 𝟎
+
+_‼_ : ∀ {ℓ n} {A : Fin n → Type ℓ} → IVec n A → (i : Fin n) → A i
+(_ , a) ‼ 𝟎 = a
+(as , _) ‼ 𝐒 i = as ‼ i
+
+map : ∀ {ℓ ℓ' n} {A : Fin n → Type ℓ} {B : Fin n → Type ℓ'}
+    → IVec n A
+    → (∀ i → A i → B i)
+    → IVec n B
+map {n = zero} tt f = tt
+map {n = 1+ n} (as , a) f = map as (λ i → f (𝐒 i)) , f 𝟎 a
+
+map-id : ∀ {ℓ n} {A : Fin n → Type ℓ}
+       → (v : IVec n A)
+       → map v (λ _ x → x) ≡ v
+map-id {n = zero} tt = refl
+map-id {n = 1+ n} (as , a) = Σ-≡→≡ ((map-id as) , (subst-const _ a))
+
+map-comp : ∀ {ℓ ℓ' ℓ'' n} {A : Fin n → Type ℓ} {B : Fin n → Type ℓ'} {C : Fin n → Type ℓ''}
+         → {f : ∀ i → A i → B i} {g : ∀ i → B i → C i}
+         → (v : IVec n A)
+         → map (map v f) g
+         ≡ map v λ i x → g i (f i x) 
+map-comp {n = zero} tt = refl
+map-comp {n = 1+ n} (as , a) = Σ-≡→≡ ((map-comp as) , subst-const _ _)
+
+map-‼ : ∀ {ℓ ℓ' n} {A : Fin n → Type ℓ} {B : Fin n → Type ℓ'}
+      → (i : Fin n)
+      → (v : IVec n A)
+      → (f : ∀ i → A i → B i)
+      → map v f ‼ i
+      ≡ f i (v ‼ i)
+map-‼ {n = n} 𝟎 v f = refl
+map-‼ {n = n} (𝐒 i) v f = map-‼ i (v .₁) (λ i → f (𝐒 i))
+
+subst-map : ∀ {ℓ ℓ' n} {X : Type ℓ} {A : X → Fin n → Type ℓ'} {x x' : X}
+          → (v : IVec n (A x))
+          → (p : x ≡ x')
+          → subst (λ - → IVec n (A -)) p v
+          ≡ map v (λ i → subst (λ - → A - i) p)
+subst-map v refl = sym (map-id v)
+
+map-≡ : ∀ {ℓ ℓ' n} {A : Fin n → Type ℓ} {B : Fin n → Type ℓ'}
+      → {f g : ∀ i → A i → B i}
+      → (v : IVec n A)
+      → (∀ i x → f i x ≡ g i x)
+      → map v f ≡ map v g
+map-≡ {n = zero} tt p = refl
+map-≡ {n = 1+ n} (as , a) p = Σ-≡→≡ ((map-≡ as (λ i → p (𝐒 i))) , (subst-const _ _ ∙ p 𝟎 a))

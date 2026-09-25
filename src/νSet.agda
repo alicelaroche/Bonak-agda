@@ -3,11 +3,14 @@ open import Axioms.FunExt
 open import Axioms.Univalence
 
 module νSet
-  (fe : FunExt-Axiom)
-  (ua : Univalence-Axiom)  
-  (arity : Type)
+  (arity : ℕ)
   where
 
-open import νSet.Base fe arity public
-open import νSet.Face fe arity public
-open import νSet.Bisim fe ua arity public
+open import νSet.Context public
+
+open import νSet.Frame arity public
+open import νSet.Painting arity public
+open import νSet.Restr-Frame arity public
+open import νSet.Restr-Painting arity public
+open import νSet.Coh-Frame arity public
+open import νSet.Coh-Painting arity public

@@ -7,19 +7,19 @@ _∼_ : ∀ {ℓ} {ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
 f ∼ g = (x : _) → f x ≡ g x
 infixr 4 _∼_
 
-hasLInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
+hasLInv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
 hasLInv {A = A} {B} f = Σ[ g ∈ (B → A) ] (∀ a → g (f a) ≡ a)
 
-hasRInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
+hasRInv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
 hasRInv {A = A} {B} f = Σ[ g ∈ (B → A) ] (∀ b → f (g b) ≡ b)
 
-hasQInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
+hasQInv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
 hasQInv {A = A} {B} f = Σ[ g ∈ (B → A) ] ((∀ a → g (f a) ≡ a) × (∀ b → f (g b) ≡ b))
 
-isEquiv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
+isEquiv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (A → B) → Type (ℓ ⊔ ℓ')
 isEquiv {A = A} {B} f = hasLInv f × hasRInv f
 
-LInv∼RInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (f : A → B)
+LInv∼RInv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (f : A → B)
           → (linv : hasLInv f) (rinv : hasRInv f)
           → ∀ b → linv .₁ b ≡ rinv .₁ b
 LInv∼RInv f (g , linv) (h , rinv) b =
@@ -27,15 +27,15 @@ LInv∼RInv f (g , linv) (h , rinv) b =
   g (f (h b)) ≡⟨ linv (h b) ⟩
   h b ∎
 
-isEquiv→hasQInv : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} → (f : A → B)
+isEquiv→hasQInv : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → (f : A → B)
                 → isEquiv f → hasQInv f
 isEquiv→hasQInv f ((g , linv) , (h , rinv)) =
   g , linv , λ b → trans (cong f (LInv∼RInv f (g , linv) (h , rinv) b)) (rinv b)
 
-_≃_ : ∀ {ℓ ℓ'} (A : Set ℓ) (B : Set ℓ') → Type (ℓ ⊔ ℓ')
+_≃_ : ∀ {ℓ ℓ'} (A : Type ℓ) (B : Type ℓ') → Type (ℓ ⊔ ℓ')
 _≃_ A B = Σ[ f ∈ (A → B) ] isEquiv f
 
-_∙≃_ : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} {C : Set ℓ''}
+_∙≃_ : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''}
      → A ≃ B → B ≃ C → A ≃ C
 _∙≃_ (f  , (g  , linv)  , (h  , rinv))
      (f' , (g' , linv') , (h' , rinv')) =
@@ -56,7 +56,7 @@ module _ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (e : A ≃ B) where
   secEq : ∀ b → equivFun (invEq b) ≡ b
   secEq = isEquiv→hasQInv equivFun (e .₂) .₂ .₂
 
-≃id : ∀ {ℓ} (A : Set ℓ) → A ≃ A
+≃id : ∀ {ℓ} (A : Type ℓ) → A ≃ A
 ≃id A = id , ((id , λ _ → refl) , id , (λ _ → refl))
 
 ≃sym : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → A ≃ B → B ≃ A
@@ -67,10 +67,10 @@ module _ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (e : A ≃ B) where
  f∘g∼id = secEq e
  g∘f∼id = retEq e
 
-≃sym-id : ∀ {ℓ} (A : Set ℓ) → ≃sym (≃id A) ≡ ≃id A
+≃sym-id : ∀ {ℓ} (A : Type ℓ) → ≃sym (≃id A) ≡ ≃id A
 ≃sym-id A = refl
 
-eq→isEquiv : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A ≃ B
+eq→isEquiv : ∀ {ℓ} {A B : Type ℓ} → A ≡ B → A ≃ B
 eq→isEquiv eq = (transport eq)
               , (transport (sym eq) , subst-sym-l eq)
               , (transport (sym eq) , subst-sym-r eq)
@@ -123,7 +123,7 @@ hasQInv→isHAE f (g , linv , rinv) =
      sym (rinv (f (g (f a)))) ∙ cong f (linv (g (f a))) ∙ rinv (f a) ∎
 
 Σ-≃-fst : ∀ {a₁ a₂ b}
-        → {A : Set a₁} {A' : Set a₂} {B : A' → Set b}
+        → {A : Type a₁} {A' : Type a₂} {B : A' → Type b}
         → (A≈ : A ≃ A')
         → Σ A (λ - → B (equivFun A≈ -)) ≃ Σ A' B
 Σ-≃-fst {A = A} {A'} {B} A≈ = f , (g , f-linv) , (g , f-rinv)
@@ -160,7 +160,7 @@ hasQInv→isHAE f (g , linv , rinv) =
  f-rinv (a , b) = Σ-≡→≡ (ε a , subst-sym-r (ε a) b)
 
 Σ-≃-snd : ∀ {a b₁ b₂}
-        → {A : Set a} {B : A → Set b₁} {B' : A → Set b₂}
+        → {A : Type a} {B : A → Type b₁} {B' : A → Type b₂}
         → (B≃ : ∀ a → B a ≃ B' a)
         → Σ A B ≃ Σ A B'
 Σ-≃-snd {A = A} {B} {B'} B≈ = f , (g , f-linv) , (g , f-rinv)
@@ -178,16 +178,16 @@ hasQInv→isHAE f (g , linv , rinv) =
  f-rinv (a , b) = Σ-≡→≡ (refl , secEq (B≈ a) b)
  
 Σ-≃ : ∀ {a₁ a₂ b₁ b₂}
-    → {A : Set a₁} {A' : Set a₂}
-    → {B : A → Set b₁} {B' : A' → Set b₂}
+    → {A : Type a₁} {A' : Type a₂}
+    → {B : A → Type b₁} {B' : A' → Type b₂}
     → (A≃ : A ≃ A')
     → (B≃ : ∀ a → B a ≃ B' (equivFun A≃ a))
     → Σ A B ≃ Σ A' B'
 Σ-≃ A≃ B≃ = Σ-≃-snd B≃ ∙≃ Σ-≃-fst A≃
 
 Σ-≃-eq : ∀ {a₁ a₂ b₁ b₂}
-    → {A : Set a₁} {A' : Set a₂}
-    → {B : A → Set b₁} {B' : A' → Set b₂}
+    → {A : Type a₁} {A' : Type a₂}
+    → {B : A → Type b₁} {B' : A' → Type b₂}
     → (A≃ : A ≃ A')
     → (B≃ : ∀ a → B a ≃ B' (equivFun A≃ a))
     → (ab : Σ A B)
@@ -195,7 +195,7 @@ hasQInv→isHAE f (g , linv , rinv) =
 Σ-≃-eq A≃ B≃ ab = refl
 
 module ≃Π
-  (fe : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'}
+  (fe : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'}
       → (f g : (a : A) → B a)
       → (∀ a → f a ≡ g a)
       → f ≡ g)
@@ -238,7 +238,7 @@ module ≃Π
     f-rinv h = fe _ _ λ a → dcong h (ε a)
     
   Π-≃-snd : ∀ {a b₁ b₂}
-          → {A : Set a} {B : A → Set b₁} {B' : A → Set b₂}
+          → {A : Type a} {B : A → Type b₁} {B' : A → Type b₂}
           → (B≃ : ∀ a → B a ≃ B' a)
           → ((a : A) → B a) ≃ ((a : A) → B' a)
   Π-≃-snd {A = A} {B} {B'} B≈ = f , ((g , f-linv) , (g , f-rinv))
@@ -256,8 +256,8 @@ module ≃Π
     f-rinv g' = fe _ _ λ a → secEq (B≈ a) (g' a)
 
   Π-≃ : ∀ {a₁ a₂ b₁ b₂}
-      → {A : Set a₁} {A' : Set a₂}
-      → {B : A → Set b₁} {B' : A' → Set b₂}
+      → {A : Type a₁} {A' : Type a₂}
+      → {B : A → Type b₁} {B' : A' → Type b₂}
       → (A≃ : A ≃ A')
       → (B≃ : ∀ a → B a ≃ B' (equivFun A≃ a))
       → ((a : A) → B a) ≃ ((a : A') → B' a)
