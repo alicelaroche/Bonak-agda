@@ -9,6 +9,8 @@ Ramkumar Ramachandra, presented in the following paper :\
 [A Parametricity-Based Formalization of Semi-Simplicial and Semi-Cubical Sets](https://doi.org/10.1017/S096012952500009X)
 ([arXiv](https://arxiv.org/abs/2401.))
 
+This work was verified with Agda 2.8.0 and should work with Agda 2.9.0 as well.
+
 ## Postulates :
 
 We postulate univalence and functional extensionality, additionally we add
