@@ -1,6 +1,6 @@
 open import Prelude
 
-module Category  (arity : Type) where
+module Presheaf.Base (arity : Type) where
 
 open import HSet
 open import Inequalities
@@ -183,4 +183,3 @@ module Presheaf-UA
        psh' .Face n p p≤n ε (F0≃ (1+ n) .₁ X)
         ≡⟨ cong (psh' .Face n p p≤n ε) (happly (ua-β (F0≃ (1+ n))) X) ⟩⁻¹
        psh' .Face n p p≤n ε (subst (λ - → -) (ua (F0≃ (1+ n))) X) ∎ 
-

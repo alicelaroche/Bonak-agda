@@ -4,6 +4,6 @@ open import Prelude
 open import Inequalities
 open import HSet
 open import Equiv
-open import Category
+open import Presheaf
 open import νSet
 open import Correspondence
