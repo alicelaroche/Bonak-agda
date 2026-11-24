@@ -9,5 +9,4 @@ module νSet
   where
 
 open import νSet.Base fe arity public
-open import νSet.Face fe arity public
 open import νSet.Bisim fe ua arity public

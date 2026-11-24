@@ -1,18 +1,21 @@
 open import Prelude
 open import Axioms.FunExt
+open import Axioms.Univalence
 
-module νSet.Face
-  (fe : FunExt-Axiom)
+module Correspondence.νSetToPresheaf
+  (fe-axiom : FunExt-Axiom)
+  (ua-axiom : Univalence-Axiom) 
   (arity : Type)
- where
+  where
 
 open import Inequalities
+
 open import HSet
 
-open HSet-FE fe
-open FE fe
+open import Presheaf fe-axiom ua-axiom arity
+open import νSet fe-axiom ua-axiom arity
 
-open import νSet.Base fe arity
+open FE fe-axiom
 
 getFrame : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃)
          → (D : νSet-< n)
@@ -115,7 +118,7 @@ getPaintingRestr n p (1+ q) {1+ δ} (ineq₃ (1+ δpn) δqn Hpq Hpn Hqn Hpqn) ε
 νFace n p p≤n ε D d =
  getPainting n p n (◆₃' p≤n) (D .₁) (D .₂) _
    (getFrame (1+ n) (1+ p) (1+ n) (⇑₃ ◆₃' p≤n) D d .₂ ε)
-  
+
 opaque
   νFace-coh : ∀ n p q {δ} → (p≤q≤n : [ p ≤ q ≤ n ][ δ ]₃) 
            → (ε ω : arity)
@@ -169,7 +172,7 @@ opaque
                 (νFace (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D d .₁)) ⟩
     νFace n p (drop₃-2 p≤q≤n) ω (D .₁)
       (νFace (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε D d .₁) ∎
-  
+
   painting-≡ : ∀ n p {δ} (p≤n≤n : [ p ≤ n ≤ n ][ δ ]₃)
              → (D : νSet-< n) (E : νSet-= n D)
              → (d d' : frame n p (drop₃-2 p≤n≤n) D .Dom)
@@ -231,7 +234,59 @@ opaque
          → (∀ p {δ} (p≤n : [ p ≤ n ][ δ ]₂) (ε : arity) → νFace n p p≤n ε D d ≡ νFace n p p≤n ε D d')
          → d ≡ d'
   νFace-≡ n D d d' eq = frame-≡ n (1+ n) (◆₂ (1+ n)) D d d' eq
-{-
- let rec = frame-≡ n p (↓₂ p≤n) D d d' f in 
- Σ-≡→≡ (rec , funExt λ ε → layer-≡ n p p≤n D ε d d' rec f)
--}
+
+νSet-F0-< : ∀ m → νSet-< m → F0-< m 
+νSet-F0-< zero D = tt
+νSet-F0-< (1+ m) (D , E) = (νSet-F0-< m D) , (TotalSpace D E)
+
+νSet-Face-< : ∀ m → (D : νSet-< (1+ m))
+            → Face-< m (νSet-F0-< (1+ m) D)
+νSet-Face-< zero D = tt
+νSet-Face-< (1+ m) (D , E) = νSet-Face-< m D ,  λ p p≤n ε d → νFace m p p≤n ε D (d .₁)
+
+νSet-Coh-< : ∀ m → (D : νSet-< (2+ m))
+         → Coh-< m (νSet-F0-< (2+ m) D) (νSet-Face-< (1+ m) D)
+νSet-Coh-< zero   D = tt
+νSet-Coh-< (1+ m) ((D , E) , E') = νSet-Coh-< m (D , E) , λ p q p≤q≤m ε ω d → νFace-coh m p q p≤q≤m ε ω (D , E) (d .₁)
+
+νSet-psh-< : ∀ {m} → (D : νSet-< (2+ m)) → Presheaf-< m
+νSet-psh-< D .F0 = νSet-F0-< _ D
+νSet-psh-< D .Face = νSet-Face-< _ D
+νSet-psh-< D .Coh = νSet-Coh-< _ D
+
+νSet-F0-≥ : ∀ m → (D : νSet-< m) → νSet-> m D → ℕ → HSet
+νSet-F0-≥ m D νSet 0      = TotalSpace D (νSet .this)
+νSet-F0-≥ m D νSet (1+ n) = νSet-F0-≥ (1+ m) (D , νSet .this) (νSet .next) n
+
+νSet-Face-> : ∀ m → (D : νSet-< m) (νSet : νSet-> m D)
+            → ∀ n p {δ}
+            → [ p ≤ n + m ][ δ ]₂ → arity
+            → νSet-F0-≥ m D νSet (1+ n) .Dom
+            → νSet-F0-≥ m D νSet n .Dom
+νSet-Face-> m D νSet 0 p p≤m ε d = νFace m p p≤m ε (D , νSet .this) (d .₁)
+νSet-Face-> m D νSet (1+ n) = νSet-Face-> (1+ m) (D , νSet .this) (νSet .next) n
+
+νSet-Coh-> : ∀ m → (D : νSet-< m) (νSet : νSet-> m D)
+            → ∀ n p q {δ}
+            → (p≤q≤n : [ p ≤ q ≤ n + m ][ δ ]₃) 
+            → (ε ω : arity)
+            → (d : νSet-F0-≥ m D νSet (2+ n) .Dom)
+            → νSet-Face-> m D νSet n q (drop₃-1 p≤q≤n) ε
+               (νSet-Face-> m D νSet (1+ n) p (↑₂ drop₃-2 p≤q≤n) ω d)
+            ≡ νSet-Face-> m D νSet n p (drop₃-2 p≤q≤n) ω
+               (νSet-Face-> m D νSet (1+ n) (1+ q) (⇑₂ drop₃-1 p≤q≤n) ε d)
+νSet-Coh-> m D νSet zero p q p≤q≤m ε ω d =  νFace-coh m p q p≤q≤m ε ω (_ , νSet .next .this) (d .₁)
+νSet-Coh-> m D νSet (1+ n) = νSet-Coh-> (1+ m) (D , νSet .this) (νSet .next) n
+
+νSet→zipper : ∀ m (D : νSet-< m) (νSet : νSet-> m D) → Presheaf-zipper m
+νSet→zipper m D νSet .|F0-<| = νSet-F0-< m D
+νSet→zipper m D νSet .|F0-≥| = νSet-F0-≥ m D νSet
+νSet→zipper m D νSet .|Face-<| = νSet-Face-< m (D , νSet .this)
+νSet→zipper m D νSet .|Face-≥| = νSet-Face-> m D νSet
+νSet→zipper m D νSet .|Coh-<| = νSet-Coh-< m ((D , νSet .this) , νSet .next .this)
+νSet→zipper m D νSet .|Coh-≥| = νSet-Coh-> m D νSet
+
+g : νSet → Presheaf
+g νSet .F0 = νSet-F0-≥ 0 tt νSet
+g νSet .Face = νSet-Face-> 0 tt νSet
+g νSet .Face-coh = νSet-Coh-> 0 tt νSet
